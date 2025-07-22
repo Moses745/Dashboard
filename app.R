@@ -23,58 +23,350 @@ library(flextable) # For beautiful tables in Word
 
 # --- Define the User Interface (UI) ---
 ui <- navbarPage(
-  "DAST - Dashboard Analisis Statistik Terpadu",
+  title = div(
+    img(src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzJFNzRCNSIvPgo8cGF0aCBkPSJNOCAxMkgxNlYyMEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPHA+" width="24", height="24", style="margin-right: 8px;"),
+    span("DAST", style = "font-weight: bold; color: #2E74B5; font-size: 18px;"),
+    span(" - Dashboard Analisis Statistik Terpadu", style = "color: #555; font-size: 14px;")
+  ),
+  theme = "bootstrap",
+  windowTitle = "DAST - Dashboard Analisis Statistik Terpadu",
+  id = "navbar",
+  collapsible = TRUE,
+  
+  # Add custom CSS for beautiful styling
+  tags$head(
+    tags$style(HTML("
+      /* Custom CSS for DAST Dashboard */
+      
+      /* Navigation Bar Styling */
+      .navbar-default {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      
+      .navbar-default .navbar-nav > li > a {
+        color: white !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+      
+      .navbar-default .navbar-nav > li > a:hover {
+        background: rgba(255,255,255,0.2) !important;
+        transform: translateY(-2px);
+      }
+      
+      .navbar-default .navbar-nav > .active > a {
+        background: rgba(255,255,255,0.3) !important;
+        color: white !important;
+      }
+      
+      /* Body Background */
+      body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      
+      /* Card Styling */
+      .panel {
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border: none;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+      }
+      
+      .panel:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      }
+      
+      .panel-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      
+      .panel-success {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        color: white;
+      }
+      
+      .panel-info {
+        background: linear-gradient(135deg, #3494e6 0%, #ec6ead 100%);
+        color: white;
+      }
+      
+      .panel-default {
+        background: white;
+        border: 1px solid #e1e8ed;
+      }
+      
+      /* Jumbotron Styling */
+      .jumbotron {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+      }
+      
+      /* Button Styling */
+      .btn {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+      }
+      
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      }
+      
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      .btn-success {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+      }
+      
+      .btn-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+      
+      .btn-info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+      
+      /* Sidebar Styling */
+      .well {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border: none;
+        padding: 20px;
+      }
+      
+      /* Input Styling */
+      .form-control {
+        border-radius: 8px;
+        border: 2px solid #e1e8ed;
+        transition: border-color 0.3s ease;
+      }
+      
+      .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+      }
+      
+      /* Table Styling */
+      .dataTables_wrapper {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        padding: 20px;
+      }
+      
+      /* Alert Styling */
+      .alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+      
+      .alert-info {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #2c3e50;
+      }
+      
+      .alert-warning {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        color: #8b4513;
+      }
+      
+      /* Plot Container */
+      .shiny-plot-output {
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        background: white;
+        padding: 15px;
+      }
+      
+      /* Leaflet Map Styling */
+      .leaflet-container {
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
+      
+      /* Tab Panel Styling */
+      .nav-tabs {
+        border-bottom: 2px solid #e1e8ed;
+      }
+      
+      .nav-tabs > li > a {
+        border-radius: 8px 8px 0 0;
+        color: #667eea;
+        font-weight: 500;
+      }
+      
+      .nav-tabs > li.active > a {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+      }
+      
+      /* Verbatim Output Styling */
+      .shiny-text-output {
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e1e8ed;
+        padding: 15px;
+        font-family: 'Consolas', 'Monaco', monospace;
+      }
+      
+      /* Loading Animation */
+      .recalculating {
+        opacity: 0.3;
+        transition: opacity 0.3s ease;
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .panel {
+          margin-bottom: 15px;
+        }
+        
+        .jumbotron {
+          padding: 20px;
+        }
+        
+        .btn {
+          width: 100%;
+          margin-bottom: 10px;
+        }
+      }
+      
+      /* Animation Classes */
+      .fade-in {
+        animation: fadeIn 0.8s ease-in;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .slide-in {
+        animation: slideIn 0.6s ease-out;
+      }
+      
+      @keyframes slideIn {
+        from { transform: translateX(-50px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    "))
+  ),
   
   # --- 1. Beranda (Home) Menu ---
-  tabPanel("Beranda",
+  tabPanel("🏠 Beranda",
            fluidRow(
              column(12,
-                    div(class = "jumbotron",
-                        h1("Dashboard Analisis Statistik Terpadu (DAST)", 
-                           style = "color: #2c3e50; text-align: center;"),
-                        hr(),
-                        h3("Selamat Datang di DAST", style = "color: #34495e;"),
-                        p("Dashboard Analisis Statistik Terpadu (DAST) adalah platform komprehensif yang dirancang khusus untuk mempermudah eksplorasi, analisis, dan interpretasi data statistik dengan fokus pada kerentanan sosial dan analisis multivariat.", 
-                          style = "font-size: 16px; text-align: justify;")
+                    div(class = "jumbotron fade-in",
+                        div(style = "text-align: center;",
+                            h1(HTML("🎯 Dashboard Analisis Statistik Terpadu"), 
+                               style = "color: white; font-weight: bold; margin-bottom: 10px;"),
+                            h2(HTML("<span style='color: #FFD700;'>DAST</span>"), 
+                               style = "margin-top: 0; margin-bottom: 20px;"),
+                            div(style = "height: 3px; width: 100px; background: linear-gradient(90deg, #FFD700, #FFA500); margin: 20px auto;")
+                        ),
+                        br(),
+                        div(style = "text-align: center;",
+                            h3(HTML("🚀 <strong>Selamat Datang di Era Baru Analisis Statistik</strong>"), 
+                               style = "color: white; margin-bottom: 20px;"),
+                            p("Platform revolusioner yang mengintegrasikan kekuatan analisis statistik modern dengan desain yang elegan dan user-friendly. Dirancang khusus untuk peneliti, akademisi, dan praktisi yang membutuhkan solusi analisis data yang komprehensif dan dapat diandalkan.", 
+                              style = "font-size: 18px; color: rgba(255,255,255,0.9); line-height: 1.6; text-align: center; max-width: 800px; margin: 0 auto;")
+                        )
                     )
              )
            ),
            
            fluidRow(
              column(6,
-                    div(class = "panel panel-primary",
-                        div(class = "panel-heading", h4("Metadata Dataset")),
-                        div(class = "panel-body",
-                            h5("Informasi Dataset:"),
-                            tags$ul(
-                              tags$li("Nama Dataset: Social Vulnerability Index (SoVI) Data"),
-                              tags$li("Jumlah Observasi: 515 kabupaten/kota"),
-                              tags$li("Jumlah Variabel: 16 variabel utama"),
-                              tags$li("Periode Data: Data terkini kerentanan sosial Indonesia"),
-                              tags$li("Sumber: Badan Pusat Statistik dan instansi terkait")
+                    div(class = "panel panel-primary slide-in",
+                        div(class = "panel-heading", 
+                            h4(HTML("📊 <strong>Metadata Dataset</strong>"), style = "margin: 0; color: white;")),
+                        div(class = "panel-body", style = "padding: 25px;",
+                            div(style = "margin-bottom: 20px;",
+                                h5(HTML("ℹ️ <strong>Informasi Dataset:</strong>"), style = "color: white; margin-bottom: 15px;"),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;",
+                                    HTML("
+                                    <div style='margin-bottom: 8px;'><strong>📋 Dataset:</strong> Social Vulnerability Index (SoVI)</div>
+                                    <div style='margin-bottom: 8px;'><strong>🏘️ Observasi:</strong> 515 kabupaten/kota</div>
+                                    <div style='margin-bottom: 8px;'><strong>📈 Variabel:</strong> 16 variabel utama</div>
+                                    <div style='margin-bottom: 8px;'><strong>📅 Periode:</strong> Data terkini 2024</div>
+                                    <div style='margin-bottom: 8px;'><strong>🏛️ Sumber:</strong> Badan Pusat Statistik</div>
+                                    ")
+                                )
                             ),
-                            h5("Variabel Utama:"),
-                            tags$ul(
-                              tags$li("CHILDREN: Persentase anak-anak"),
-                              tags$li("ELDERLY: Persentase lansia"),
-                              tags$li("POVERTY: Tingkat kemiskinan"),
-                              tags$li("EDUCATION: Tingkat pendidikan rendah"),
-                              tags$li("Dan 12 variabel lainnya")
+                            div(
+                                h5(HTML("🎯 <strong>Variabel Kunci:</strong>"), style = "color: white; margin-bottom: 15px;"),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;",
+                                    HTML("
+                                    <div style='margin-bottom: 5px;'>👶 <strong>CHILDREN:</strong> Persentase anak-anak</div>
+                                    <div style='margin-bottom: 5px;'>👴 <strong>ELDERLY:</strong> Persentase lansia</div>
+                                    <div style='margin-bottom: 5px;'>💰 <strong>POVERTY:</strong> Tingkat kemiskinan</div>
+                                    <div style='margin-bottom: 5px;'>🎓 <strong>EDUCATION:</strong> Tingkat pendidikan</div>
+                                    <div style='margin-bottom: 0px;'>➕ <strong>Dan 12 variabel lainnya</strong></div>
+                                    ")
+                                )
                             )
                         )
                     )
              ),
              column(6,
-                    div(class = "panel panel-success",
-                        div(class = "panel-heading", h4("Fitur Utama DAST")),
-                        div(class = "panel-body",
-                            tags$ul(
-                              tags$li(strong("Manajemen Data:"), " Transformasi data kontinyu ke kategorik dengan interpretasi otomatis"),
-                              tags$li(strong("Eksplorasi Data:"), " Statistik deskriptif, visualisasi interaktif, dan pemetaan geografis"),
-                              tags$li(strong("Uji Asumsi:"), " Pengujian normalitas dan homogenitas dengan berbagai metode"),
-                              tags$li(strong("Statistik Inferensia:"), " Uji t, uji proporsi, uji varians, dan ANOVA"),
-                              tags$li(strong("Regresi Linear:"), " Analisis regresi berganda dengan uji asumsi lengkap"),
-                              tags$li(strong("Download Fleksibel:"), " Ekspor hasil dalam format JPG, PDF, dan Word")
+                    div(class = "panel panel-success slide-in",
+                        div(class = "panel-heading", 
+                            h4(HTML("🚀 <strong>Fitur Unggulan DAST</strong>"), style = "margin: 0; color: white;")),
+                        div(class = "panel-body", style = "padding: 25px;",
+                            div(style = "display: grid; gap: 15px;",
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #FFD700;",
+                                    HTML("<strong>📊 Manajemen Data:</strong><br><small>Transformasi data kontinyu ke kategorik dengan interpretasi AI</small>")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #00D4AA;",
+                                    HTML("<strong>🔍 Eksplorasi Data:</strong><br><small>Visualisasi interaktif dan pemetaan geografis real-time</small>")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #FF6B6B;",
+                                    HTML("<strong>✅ Uji Asumsi:</strong><br><small>Pengujian normalitas dan homogenitas otomatis</small>")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #4ECDC4;",
+                                    HTML("<strong>📈 Statistik Inferensia:</strong><br><small>Uji t, ANOVA, proporsi dengan interpretasi lengkap</small>")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #45B7D1;",
+                                    HTML("<strong>📉 Regresi Linear:</strong><br><small>Analisis multivariat dengan diagnostic plots</small>")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #96CEB4;",
+                                    HTML("<strong>💾 Export Premium:</strong><br><small>JPG berkualitas tinggi & Word profesional</small>")
+                                )
                             )
                         )
                     )
@@ -83,15 +375,66 @@ ui <- navbarPage(
            
            fluidRow(
              column(12,
-                    div(class = "panel panel-info",
-                        div(class = "panel-heading", h4("Panduan Penggunaan")),
-                        div(class = "panel-body",
-                            p("1. Mulai dengan", strong("Manajemen Data"), "untuk mempersiapkan dataset sesuai kebutuhan analisis"),
-                            p("2. Lakukan", strong("Eksplorasi Data"), "untuk memahami karakteristik dan distribusi data"),
-                            p("3. Jalankan", strong("Uji Asumsi"), "sebelum melakukan analisis inferensia"),
-                            p("4. Pilih metode", strong("Statistik Inferensia"), "yang sesuai dengan tujuan penelitian"),
-                            p("5. Gunakan", strong("Regresi Linear"), "untuk analisis hubungan antar variabel"),
-                            p("6. Unduh hasil analisis dalam berbagai format untuk dokumentasi dan presentasi")
+                    div(class = "panel panel-info fade-in",
+                        div(class = "panel-heading", 
+                            h4(HTML("📚 <strong>Roadmap Analisis Profesional</strong>"), style = "margin: 0; color: white; text-align: center;")),
+                        div(class = "panel-body", style = "padding: 30px;",
+                            div(style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
+                                div(style = "background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; transition: transform 0.3s ease;",
+                                    HTML("
+                                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                      <span style='background: #FFD700; color: #2c3e50; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>1</span>
+                                      <strong style='color: white; font-size: 16px;'>📊 Manajemen Data</strong>
+                                    </div>
+                                    <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;'>Transformasi dan preprocessing data dengan berbagai metode kategorisasi untuk mempersiapkan analisis yang optimal.</p>
+                                    ")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; border-left: 5px solid #00D4AA; transition: transform 0.3s ease;",
+                                    HTML("
+                                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                      <span style='background: #00D4AA; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>2</span>
+                                      <strong style='color: white; font-size: 16px;'>🔍 Eksplorasi Data</strong>
+                                    </div>
+                                    <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;'>Analisis mendalam karakteristik data melalui statistik deskriptif dan visualisasi interaktif yang komprehensif.</p>
+                                    ")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; border-left: 5px solid #FF6B6B; transition: transform 0.3s ease;",
+                                    HTML("
+                                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                      <span style='background: #FF6B6B; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>3</span>
+                                      <strong style='color: white; font-size: 16px;'>✅ Validasi Asumsi</strong>
+                                    </div>
+                                    <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;'>Pengujian prasyarat statistik untuk memastikan validitas dan reliabilitas hasil analisis inferensia.</p>
+                                    ")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; border-left: 5px solid #4ECDC4; transition: transform 0.3s ease;",
+                                    HTML("
+                                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                      <span style='background: #4ECDC4; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>4</span>
+                                      <strong style='color: white; font-size: 16px;'>📈 Inferensia Statistik</strong>
+                                    </div>
+                                    <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;'>Penerapan metode statistik inferensia yang tepat sesuai dengan desain penelitian dan tujuan analisis.</p>
+                                    ")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; border-left: 5px solid #45B7D1; transition: transform 0.3s ease;",
+                                    HTML("
+                                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                      <span style='background: #45B7D1; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>5</span>
+                                      <strong style='color: white; font-size: 16px;'>📉 Pemodelan Regresi</strong>
+                                    </div>
+                                    <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;'>Analisis hubungan multivariat dengan diagnostic tools lengkap untuk interpretasi yang akurat.</p>
+                                    ")
+                                ),
+                                div(style = "background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; border-left: 5px solid #96CEB4; transition: transform 0.3s ease;",
+                                    HTML("
+                                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                      <span style='background: #96CEB4; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>6</span>
+                                      <strong style='color: white; font-size: 16px;'>💾 Export & Dokumentasi</strong>
+                                    </div>
+                                    <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;'>Ekspor hasil dalam format profesional (JPG, Word) untuk dokumentasi penelitian dan presentasi.</p>
+                                    ")
+                                )
+                            )
                         )
                     )
              )
@@ -108,7 +451,7 @@ ui <- navbarPage(
   ),
   
   # --- 2. Manajemen Data Menu ---
-  tabPanel("Manajemen Data",
+  tabPanel("📊 Manajemen Data",
            sidebarLayout(
              sidebarPanel(
                h4("Pengaturan Transformasi Data", style = "color: #2c3e50;"),
@@ -174,7 +517,7 @@ ui <- navbarPage(
   ),
   
   # --- 3. Eksplorasi Data Menu ---
-  tabPanel("Eksplorasi Data",
+  tabPanel("🔍 Eksplorasi Data",
            sidebarLayout(
              sidebarPanel(
                h4("Pengaturan Eksplorasi", style = "color: #2c3e50;"),
@@ -283,7 +626,7 @@ ui <- navbarPage(
   ),
   
   # --- 4. Uji Asumsi Data Menu ---
-  tabPanel("Uji Asumsi Data",
+  tabPanel("✅ Uji Asumsi Data",
            sidebarLayout(
              sidebarPanel(
                h4("Pengaturan Uji Asumsi", style = "color: #2c3e50;"),
@@ -433,7 +776,7 @@ ui <- navbarPage(
   ),
   
   # --- 5. Statistik Inferensia Menu ---
-  tabPanel("Statistik Inferensia",
+  tabPanel("📈 Statistik Inferensia",
            sidebarLayout(
              sidebarPanel(
                h4("Pengaturan Uji Statistik", style = "color: #2c3e50;"),
@@ -501,7 +844,7 @@ ui <- navbarPage(
   ),
   
   # --- 6. Regresi Linear Berganda Menu ---
-  tabPanel("Regresi Linear Berganda",
+  tabPanel("📉 Regresi Linear",
            sidebarLayout(
              sidebarPanel(
                h4("Pengaturan Model Regresi", style = "color: #2c3e50;"),
