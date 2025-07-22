@@ -24,7 +24,7 @@ library(flextable) # For beautiful tables in Word
 # --- Define the User Interface (UI) ---
 ui <- navbarPage(
   title = div(
-    img(src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzJFNzRCNSIvPgo8cGF0aCBkPSJNOCAxMkgxNlYyMEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPHA+" width="24", height="24", style="margin-right: 8px;"),
+    span("📊", style = "margin-right: 8px; font-size: 20px;"),
     span("DAST", style = "font-weight: bold; color: #2E74B5; font-size: 18px;"),
     span(" - Dashboard Analisis Statistik Terpadu", style = "color: #555; font-size: 14px;")
   ),
