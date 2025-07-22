@@ -25,10 +25,10 @@
 - ✅ **Layout grid yang smart** (2x2, 3x2) untuk presentasi optimal
 
 #### 3. **📄 Download Report yang Diperbaiki**
-- ✅ **Format TXT yang stabil** menggantikan PDF bermasalah
+- ✅ **Format Word (.docx) profesional** menggantikan PDF bermasalah
 - ✅ **Semua PNG diubah ke JPG** untuk kompatibilitas lebih baik
-- ✅ **Report formatting yang enhanced** dengan header dan struktur yang rapi
-- ✅ **Real-time data integration** dalam report
+- ✅ **Beautiful Word formatting** dengan tabel berwarna dan styling profesional
+- ✅ **Real-time data integration** dalam report dengan flextable
 
 ---
 
@@ -83,7 +83,7 @@
 # Install required packages
 install.packages(c("shiny", "DT", "ggplot2", "dplyr", "leaflet", 
                    "plotly", "car", "nortest", "lmtest", "moments", 
-                   "gridExtra", "kableExtra", "Cairo"))
+                   "gridExtra", "kableExtra", "Cairo", "officer", "flextable"))
 
 # Run the dashboard
 shiny::runApp("app.R")
@@ -115,10 +115,10 @@ shiny::runApp("app.R")
    - Klik tombol kuning **"Download Semua Grafik (JPG)"**
    - Akan menghasilkan plot uji + diagnostic plots + interpretasi
 
-### **4. Download Report TXT**
-- Semua tombol hijau **"Download Laporan (PDF)"** sekarang menghasilkan file **TXT**
-- Format yang rapi dengan header, timestamp, dan interpretasi lengkap
-- Bisa dibuka di semua text editor atau word processor
+### **4. Download Report Word**
+- Semua tombol hijau **"Download Laporan (Word)"** sekarang menghasilkan file **Word (.docx)**
+- Format profesional dengan tabel berwarna, header styling, dan layout yang menarik
+- Bisa dibuka di Microsoft Word, LibreOffice, Google Docs, dan aplikasi office lainnya
 
 ---
 
@@ -131,12 +131,12 @@ shiny::runApp("app.R")
 - `Plot_[variabel]_[tanggal].jpg`
 - `DAST_Plot_Asumsi_Regresi_[tanggal].jpg`
 
-### **Format TXT (Report yang Diperbaiki)**
-- `DAST_Laporan_Lengkap_[tanggal].txt`
-- `DAST_Manajemen_Data_[tanggal].txt`
-- `DAST_Uji_Asumsi_[variabel]_[tanggal].txt`
-- `DAST_Statistik_Inferensia_[jenis_uji]_[tanggal].txt`
-- `DAST_Laporan_Regresi_[tanggal].txt`
+### **Format Word (Report Profesional)**
+- `DAST_Laporan_Lengkap_[tanggal].docx`
+- `DAST_Manajemen_Data_[tanggal].docx`
+- `DAST_Uji_Asumsi_[variabel]_[tanggal].docx`
+- `DAST_Statistik_Inferensia_[jenis_uji]_[tanggal].docx`
+- `DAST_Laporan_Regresi_[tanggal].docx`
 
 ### **Format CSV (Data Export)**
 - `Kategorisasi_[variabel]_[tanggal].csv`
@@ -161,6 +161,8 @@ library(moments)        # Statistical moments
 library(gridExtra)      # Plot arrangements
 library(kableExtra)     # Enhanced tables
 library(Cairo)          # High-quality graphics
+library(officer)        # Word document creation
+library(flextable)      # Beautiful tables in Word
 ```
 
 ### **Data Files Required:**
@@ -183,7 +185,7 @@ library(Cairo)          # High-quality graphics
 - **One-click multi-plot downloads** in JPG format
 - **High-resolution outputs** (150 DPI, 95% quality)
 - **Smart grid layouts** for optimal presentation
-- **Comprehensive text reports** with interpretations
+- **Professional Word reports** with colored tables and beautiful formatting
 - **Timestamped filenames** for organization
 
 ### **Statistical Analysis**
@@ -211,10 +213,15 @@ This project is open source and available under the MIT License.
 
 ## 🏆 **Update Log**
 
-### **v2.0.0 - Major Enhancement (Latest)**
+### **v2.1.0 - Professional Word Reports (Latest)**
+- ✅ Converted all downloads to professional Word (.docx) format
+- ✅ Added beautiful flextable formatting with colors
+- ✅ Enhanced visual appeal with professional styling
+- ✅ Better compatibility across all office applications
+
+### **v2.0.0 - Major Enhancement**
 - ✅ Fixed map to show ALL 511 geographic data points
 - ✅ Added comprehensive JPG download for all plot sections  
-- ✅ Fixed PDF download issues with stable TXT format
 - ✅ Enhanced UI with color-coded download buttons
 - ✅ Improved plot quality and formatting
 - ✅ Added real-time data integration
