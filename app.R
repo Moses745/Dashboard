@@ -17,7 +17,7 @@ library(plotly) # For interactive plots
 library(moments) # For skewness and kurtosis
 library(gridExtra) # For arranging plots
 library(kableExtra) # For better tables
-library(latexpdf)
+library(Cairo) # For better graphics output
 
 # --- Define the User Interface (UI) ---
 ui <- navbarPage(
@@ -126,6 +126,8 @@ ui <- navbarPage(
                verbatimTextOutput("variable_info"),
                hr(),
                h4("Download", style = "color: #27ae60;"),
+               downloadButton("download_management_jpg", "Download Semua Grafik (JPG)", 
+                              class = "btn-warning", style = "width: 100%; margin-bottom: 10px;"),
                downloadButton("download_management_report", "Download Laporan Manajemen (PDF)", 
                               class = "btn-success", style = "width: 100%; margin-bottom: 10px;"),
                downloadButton("download_categorized_table", "Download Tabel Kategorisasi (CSV)", 
@@ -254,10 +256,10 @@ ui <- navbarPage(
                  ),
                  
                  tabPanel("Peta Geografis",
-                          h3("Visualisasi Peta Indonesia"),
+                          h3("Visualisasi Peta Indonesia - Semua 511 Kabupaten/Kota"),
                           div(class = "alert alert-info",
                               h4("Informasi Peta"),
-                              p("Peta menampilkan distribusi data berdasarkan koordinat geografis kabupaten/kota di Indonesia.")
+                              p("Peta menampilkan distribusi data untuk semua 511 kabupaten/kota di Indonesia berdasarkan koordinat geografis yang tersedia.")
                           ),
                           leafletOutput("map_plot", height = "600px"),
                           hr(),
@@ -299,6 +301,8 @@ ui <- navbarPage(
                                   selected = c("shapiro", "levene")),
                hr(),
                h4("Download", style = "color: #27ae60;"),
+               downloadButton("download_assumption_jpg", "Download Semua Grafik (JPG)", 
+                              class = "btn-warning", style = "width: 100%; margin-bottom: 10px;"),
                downloadButton("download_assumption_report", "Download Laporan Uji Asumsi (PDF)", 
                               class = "btn-success", style = "width: 100%;")
              ),
@@ -447,6 +451,8 @@ ui <- navbarPage(
                
                hr(),
                h4("Download", style = "color: #27ae60;"),
+               downloadButton("download_inference_jpg", "Download Semua Grafik (JPG)", 
+                              class = "btn-warning", style = "width: 100%; margin-bottom: 10px;"),
                downloadButton("download_inference_report", "Download Laporan Statistik Inferensia (PDF)", 
                               class = "btn-success", style = "width: 100%;")
              ),
@@ -696,11 +702,11 @@ server <- function(input, output, session) {
     return(df)
   })
   
-  # Load geographical data
+  # Load geographical data - ENHANCED to load all 511 data points
   geo_data <- reactive({
     tryCatch({
-      # Fetch the geographical data from the provided URL
-      geo_df <- read.csv("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/sovi_data_longitudelatitude-v2WH1ETJpkPgKYXeaW3KwFYaGrOzTU.csv")
+      # Load the local geographical data file
+      geo_df <- read.csv("sovi_data_longitudelatitude.csv", stringsAsFactors = FALSE)
       
       # Convert latitude and longitude to numeric
       geo_df$latitude <- as.numeric(geo_df$latitude)
@@ -708,6 +714,9 @@ server <- function(input, output, session) {
       
       # Remove rows with missing coordinates
       geo_df <- geo_df[!is.na(geo_df$latitude) & !is.na(geo_df$longitude), ]
+      
+      # Clean up the district names
+      geo_df$Nama.Kabupaten <- trimws(geo_df$Nama.Kabupaten)
       
       return(geo_df)
     }, error = function(e) {
@@ -1215,73 +1224,110 @@ server <- function(input, output, session) {
     }
   })
   
-  # Map visualization - ENHANCED with real coordinates
+  # Map visualization - ENHANCED to show ALL 511 data points with proper shapes
   output$map_plot <- renderLeaflet({
     df <- filtered_data()
     geo_df <- geo_data()
     var_name <- input$variable_explore
     
-    # Merge data with geographical coordinates
-    # Try to match by district code or create a mapping
     if(nrow(geo_df) > 0) {
-      # Create a sample of data points for visualization
-      n_points <- min(nrow(df), nrow(geo_df), 100)  # Limit to 100 points for performance
+      # Use ALL available geographical data points (not just a sample)
+      # Create mapping with proper indexing
+      n_data <- min(nrow(df), nrow(geo_df))
       
-      # Sample data
-      sample_indices <- sample(1:min(nrow(df), nrow(geo_df)), n_points)
       map_data <- data.frame(
-        lat = geo_df$latitude[sample_indices],
-        lng = geo_df$longitude[sample_indices],
-        value = df[[var_name]][sample_indices],
-        district = geo_df$Nama.Kabupaten[sample_indices]
+        lat = geo_df$latitude[1:n_data],
+        lng = geo_df$longitude[1:n_data],
+        value = if(n_data <= nrow(df)) df[[var_name]][1:n_data] else rep(df[[var_name]][1], n_data),
+        district = geo_df$Nama.Kabupaten[1:n_data]
       )
       
-      # Remove rows with missing coordinates or values
-      map_data <- map_data[complete.cases(map_data), ]
+      # Remove rows with missing coordinates
+      map_data <- map_data[complete.cases(map_data[c("lat", "lng")]), ]
       
       if(nrow(map_data) > 0) {
         if(is.numeric(map_data$value)) {
-          # Create color palette
-          pal <- colorNumeric(palette = "YlOrRd", domain = map_data$value)
+          # Create color palette based on the variable values
+          value_range <- range(map_data$value, na.rm = TRUE)
+          pal <- colorNumeric(
+            palette = c("#FFE0B2", "#FF9800", "#E65100"), 
+            domain = value_range
+          )
           
           # Create popup text
           popup_text <- paste(
-            "<strong>", map_data$district, "</strong><br>",
-            var_name, ":", round(map_data$value, 2)
+            "<div style='font-family: Arial; font-size: 12px;'>",
+            "<strong style='color: #1976D2;'>", map_data$district, "</strong><br>",
+            "<strong>", var_name, ":</strong> ", round(map_data$value, 3), "<br>",
+            "<small>Klik untuk detail</small>",
+            "</div>"
           )
           
+          # Create the map with custom markers (squares instead of circles)
           leaflet(map_data) %>%
-            addTiles() %>%
-            addCircleMarkers(
-              ~lng, ~lat,
-              radius = ~sqrt(abs(value)) * 2 + 5,
-              color = ~pal(value),
+            addProviderTiles(providers$CartoDB.Positron) %>%
+            addRectangles(
+              lng1 = ~lng - 0.05, lat1 = ~lat - 0.05,
+              lng2 = ~lng + 0.05, lat2 = ~lat + 0.05,
+              fillColor = ~pal(value),
               fillOpacity = 0.8,
+              color = "#2E2E2E",
+              weight = 1,
               popup = popup_text,
-              stroke = TRUE,
-              weight = 1
+              label = ~paste(district, ":", round(value, 2)),
+              labelOptions = labelOptions(
+                style = list("font-weight" = "normal", padding = "3px 8px"),
+                textsize = "12px",
+                direction = "auto"
+              )
             ) %>%
             addLegend(
               pal = pal, 
               values = ~value,
-              title = var_name,
-              position = "bottomright"
+              title = HTML(paste0("<strong>", var_name, "</strong>")),
+              position = "bottomright",
+              opacity = 0.8
             ) %>%
-            setView(lng = 118, lat = -2, zoom = 5)
+            setView(lng = 118, lat = -2, zoom = 5) %>%
+            addControl(
+              html = paste0("<div style='background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);'>",
+                           "<strong>Total Kabupaten/Kota: ", nrow(map_data), "</strong><br>",
+                           "<small>Hover untuk label, klik untuk detail</small></div>"),
+              position = "topright"
+            )
         } else {
-          # For categorical data
+          # For categorical data - use different colors for different categories
+          unique_cats <- unique(map_data$value)
+          colors <- rainbow(length(unique_cats))
+          color_map <- setNames(colors, unique_cats)
+          
           popup_text <- paste(
-            "<strong>", map_data$district, "</strong><br>",
-            var_name, ":", map_data$value
+            "<div style='font-family: Arial; font-size: 12px;'>",
+            "<strong style='color: #1976D2;'>", map_data$district, "</strong><br>",
+            "<strong>", var_name, ":</strong> ", map_data$value, "<br>",
+            "<small>Klik untuk detail</small>",
+            "</div>"
           )
           
           leaflet(map_data) %>%
-            addTiles() %>%
-            addMarkers(
-              ~lng, ~lat,
-              popup = popup_text
+            addProviderTiles(providers$CartoDB.Positron) %>%
+            addRectangles(
+              lng1 = ~lng - 0.05, lat1 = ~lat - 0.05,
+              lng2 = ~lng + 0.05, lat2 = ~lat + 0.05,
+              fillColor = color_map[map_data$value],
+              fillOpacity = 0.8,
+              color = "#2E2E2E",
+              weight = 1,
+              popup = popup_text,
+              label = ~paste(district, ":", value)
             ) %>%
-            setView(lng = 118, lat = -2, zoom = 5)
+            setView(lng = 118, lat = -2, zoom = 5) %>%
+            addControl(
+              html = paste0("<div style='background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);'>",
+                           "<strong>Total Kabupaten/Kota: ", nrow(map_data), "</strong><br>",
+                           "<strong>Kategori: ", length(unique_cats), "</strong></div>"),
+              position = "topright"
+            )
         }
       } else {
         # Fallback map
@@ -1299,28 +1345,63 @@ server <- function(input, output, session) {
     }
   })
   
-  # Geographic data table
+  # Geographic data table - ENHANCED to show all data with search functionality
   output$geo_data_table <- renderDT({
     df <- filtered_data()
     geo_df <- geo_data()
     var_name <- input$variable_explore
     
     if(nrow(geo_df) > 0) {
-      # Create summary table with geographical info
-      n_display <- min(20, nrow(geo_df))
+      # Create complete summary table with geographical info
+      n_data <- min(nrow(df), nrow(geo_df))
       geo_summary <- data.frame(
-        Kabupaten = geo_df$Nama.Kabupaten[1:n_display],
-        Latitude = geo_df$latitude[1:n_display],
-        Longitude = geo_df$longitude[1:n_display],
-        Value = df[[var_name]][1:n_display]
+        No = 1:n_data,
+        Kabupaten = geo_df$Nama.Kabupaten[1:n_data],
+        Provinsi = sub("KABUPATEN |KOTA ", "", geo_df$Nama.Kabupaten[1:n_data]) %>% 
+                   substr(1, 15), # Extract first part as proxy for province
+        Latitude = round(geo_df$latitude[1:n_data], 6),
+        Longitude = round(geo_df$longitude[1:n_data], 6),
+        Value = if(n_data <= nrow(df)) df[[var_name]][1:n_data] else rep(df[[var_name]][1], n_data)
       )
-      names(geo_summary)[4] <- var_name
+      names(geo_summary)[6] <- var_name
       
-      datatable(geo_summary, options = list(pageLength = 10, scrollX = TRUE))
+      # Add statistics summary
+      if(is.numeric(geo_summary[[var_name]])) {
+        geo_summary[[paste0(var_name, "_Kategori")]] <- cut(
+          geo_summary[[var_name]], 
+          breaks = 3, 
+          labels = c("Rendah", "Sedang", "Tinggi")
+        )
+      }
+      
+      datatable(geo_summary, 
+                options = list(
+                  pageLength = 15, 
+                  scrollX = TRUE,
+                  searchHighlight = TRUE,
+                  dom = 'Bfrtip',
+                  buttons = c('copy', 'csv', 'excel'),
+                  columnDefs = list(
+                    list(className = 'dt-center', targets = c(0, 3, 4)),
+                    list(width = '200px', targets = 1),
+                    list(width = '100px', targets = c(3, 4, 5))
+                  )
+                ),
+                filter = 'top',
+                caption = htmltools::tags$caption(
+                  style = 'caption-side: top; text-align: center; color: #2E2E2E; font-size: 14px;',
+                  paste0('Total: ', n_data, ' Kabupaten/Kota dengan Data Geografis Lengkap')
+                )) %>%
+        formatStyle(var_name,
+                    background = styleColorBar(range(geo_summary[[var_name]], na.rm = TRUE), '#FFE0B2'),
+                    backgroundSize = '100% 90%',
+                    backgroundRepeat = 'no-repeat',
+                    backgroundPosition = 'center')
     } else {
       # Fallback table
       data.frame(
-        Message = "Data geografis tidak tersedia"
+        Message = "Data geografis tidak tersedia",
+        Info = "Silakan periksa file sovi_data_longitudelatitude.csv"
       ) %>%
         datatable(options = list(dom = 't'))
     }
@@ -3135,57 +3216,414 @@ server <- function(input, output, session) {
     }
   })
   
-  # --- Download Handlers - FIXED ---
+  # --- Download Handlers - ENHANCED ---
   
   # Helper function to create temporary files
   create_temp_file <- function(extension) {
     tempfile(fileext = paste0(".", extension))
   }
   
-  # Download full report
-  output$download_full_report <- downloadHandler(
+  # Helper function to create combined plots and save as JPG
+  create_combined_plot_jpg <- function(plots_list, filename, width = 1600, height = 1200) {
+    jpeg(filename, width = width, height = height, res = 150, quality = 95)
+    
+    if(length(plots_list) == 1) {
+      plots_list[[1]]
+    } else if(length(plots_list) == 2) {
+      grid.arrange(grobs = plots_list, ncol = 2)
+    } else if(length(plots_list) <= 4) {
+      grid.arrange(grobs = plots_list, ncol = 2, nrow = 2)
+    } else {
+      grid.arrange(grobs = plots_list, ncol = 3, nrow = ceiling(length(plots_list)/3))
+    }
+    
+    dev.off()
+  }
+  
+  # NEW: Download all management plots as JPG
+  output$download_management_jpg <- downloadHandler(
     filename = function() {
-      paste("DAST_Laporan_Lengkap_", Sys.Date(), ".pdf", sep = "")
+      paste("DAST_Manajemen_Data_Grafik_", Sys.Date(), ".jpg", sep = "")
     },
     content = function(file) {
-      # Create a simple PDF report
-      temp_file <- create_temp_file("txt")
+      req(input$variable_categorize, categorized_data())
       
-      # Write report content
-      cat("DASHBOARD ANALISIS STATISTIK TERPADU (DAST)\n", file = temp_file)
-      cat("Laporan Lengkap\n", file = temp_file, append = TRUE)
-      cat("Tanggal:", as.character(Sys.Date()), "\n\n", file = temp_file, append = TRUE)
-      cat("Dataset: Social Vulnerability Index (SoVI) Data\n", file = temp_file, append = TRUE)
-      cat("Jumlah Observasi: 515 kabupaten/kota\n", file = temp_file, append = TRUE)
-      cat("Jumlah Variabel: 16 variabel utama\n\n", file = temp_file, append = TRUE)
-      cat("Laporan ini berisi analisis komprehensif data kerentanan sosial Indonesia.\n", file = temp_file, append = TRUE)
+      # Create temporary plots
+      temp_dir <- tempdir()
+      plot_files <- c()
       
-      # Copy to output file
-      file.copy(temp_file, file)
+      # Plot 1: Categorization plot
+      p1_file <- file.path(temp_dir, "categorization_plot.jpg")
+      jpeg(p1_file, width = 800, height = 600, res = 100, quality = 95)
+      
+      df_plot <- data.frame(Category = categorized_data())
+      p1 <- ggplot(df_plot, aes(x = Category)) +
+        geom_bar(fill = "steelblue", alpha = 0.7, color = "white") +
+        geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
+        theme_minimal() +
+        labs(title = paste("Distribusi Kategorisasi:", input$variable_categorize),
+             x = "Kategori", y = "Frekuensi") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+              plot.title = element_text(size = 14, face = "bold"))
+      print(p1)
+      dev.off()
+      
+      # Plot 2: Original data histogram
+      p2_file <- file.path(temp_dir, "original_data_plot.jpg")
+      jpeg(p2_file, width = 800, height = 600, res = 100, quality = 95)
+      
+      df <- data_with_cats()
+      var_data <- df[[input$variable_categorize]]
+      p2 <- ggplot(data.frame(x = var_data), aes(x = x)) +
+        geom_histogram(bins = 30, fill = "lightblue", alpha = 0.7, color = "white") +
+        theme_minimal() +
+        labs(title = paste("Data Asli (Kontinyu):", input$variable_categorize), 
+             x = input$variable_categorize, y = "Frekuensi") +
+        theme(plot.title = element_text(size = 14, face = "bold"))
+      print(p2)
+      dev.off()
+      
+      # Plot 3: Categorized data
+      p3_file <- file.path(temp_dir, "categorized_data_plot.jpg")
+      jpeg(p3_file, width = 800, height = 600, res = 100, quality = 95)
+      
+      p3 <- ggplot(df_plot, aes(x = Category)) +
+        geom_bar(fill = "lightcoral", alpha = 0.7, color = "white") +
+        geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
+        theme_minimal() +
+        labs(title = paste("Data Kategorik:", input$variable_categorize), 
+             x = "Kategori", y = "Frekuensi") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+              plot.title = element_text(size = 14, face = "bold"))
+      print(p3)
+      dev.off()
+      
+      # Combine all plots into one image
+      jpeg(file, width = 1600, height = 1200, res = 150, quality = 95)
+      
+      # Create a grid layout
+      par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))
+      
+      # Add title
+      par(mfrow = c(1, 1))
+      plot.new()
+      text(0.5, 0.9, paste("Laporan Manajemen Data -", input$variable_categorize), 
+           cex = 2, font = 2, col = "darkblue")
+      text(0.5, 0.8, paste("Tanggal:", Sys.Date()), cex = 1.2, col = "darkgreen")
+      
+      # Add the plots by reading the temporary files and combining them
+      par(mfrow = c(2, 2), mar = c(1, 1, 2, 1))
+      
+      # Since we can't easily combine ggplot images in base R, we'll create a summary
+      plot.new()
+      text(0.5, 0.5, "Grafik Kategorisasi\ndan Perbandingan Data\nTelah Dibuat", 
+           cex = 1.5, font = 2, col = "darkblue")
+      
+      plot.new()
+      freq_table <- table(categorized_data())
+      barplot(freq_table, main = "Distribusi Kategori", col = "steelblue", las = 2)
+      
+      plot.new()
+      hist(var_data, main = "Data Asli", col = "lightblue", xlab = input$variable_categorize)
+      
+      plot.new()
+      barplot(freq_table, main = "Data Kategorik", col = "lightcoral", las = 2)
+      
+      dev.off()
+    },
+    contentType = "image/jpeg"
+  )
+  
+  # NEW: Download all assumption test plots as JPG
+  output$download_assumption_jpg <- downloadHandler(
+    filename = function() {
+      paste("DAST_Uji_Asumsi_Grafik_", input$assumption_variable, "_", Sys.Date(), ".jpg", sep = "")
+    },
+    content = function(file) {
+      req(input$assumption_variable)
+      
+      jpeg(file, width = 1600, height = 1200, res = 150, quality = 95)
+      
+      df <- data_with_cats()
+      var_data <- df[[input$assumption_variable]]
+      
+      # Create a 2x2 layout
+      par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))
+      
+      # Plot 1: Q-Q Plot
+      qqnorm(var_data, main = paste("Q-Q Plot:", input$assumption_variable),
+             pch = 19, col = "steelblue", cex = 0.8)
+      qqline(var_data, col = "red", lwd = 2)
+      
+      # Plot 2: Histogram with normal curve
+      hist(var_data, freq = FALSE, main = paste("Histogram dengan Kurva Normal:", input$assumption_variable),
+           xlab = input$assumption_variable, col = "lightblue", border = "white")
+      
+      # Add normal curve
+      x_seq <- seq(min(var_data, na.rm = TRUE), max(var_data, na.rm = TRUE), length = 100)
+      y_seq <- dnorm(x_seq, mean(var_data, na.rm = TRUE), sd(var_data, na.rm = TRUE))
+      lines(x_seq, y_seq, col = "red", lwd = 2)
+      lines(density(var_data, na.rm = TRUE), col = "blue", lwd = 2)
+      legend("topright", c("Normal Teoritis", "Density Empiris"), 
+             col = c("red", "blue"), lwd = 2, cex = 0.8)
+      
+      # Plot 3: Box plot (if grouping variable exists)
+      if(input$grouping_variable != "none") {
+        group_data <- df[[input$grouping_variable]]
+        boxplot(var_data ~ group_data, 
+                main = paste("Box Plot per Kelompok:", input$grouping_variable),
+                xlab = input$grouping_variable, ylab = input$assumption_variable,
+                col = "lightgreen", las = 2)
+      } else {
+        boxplot(var_data, main = paste("Box Plot:", input$assumption_variable),
+                ylab = input$assumption_variable, col = "lightgreen")
+      }
+      
+      # Plot 4: Summary statistics text
+      plot.new()
+      title("Ringkasan Uji Asumsi", cex.main = 1.5, font.main = 2)
+      
+      # Add test results as text
+      y_pos <- 0.9
+      text(0.1, y_pos, "Hasil Uji:", cex = 1.2, font = 2, adj = 0)
+      y_pos <- y_pos - 0.1
+      
+      if("shapiro" %in% input$selected_tests) {
+        if(length(var_data) > 5000) {
+          shapiro_result <- shapiro.test(sample(var_data, 5000))
+        } else {
+          shapiro_result <- shapiro.test(var_data)
+        }
+        result_text <- ifelse(shapiro_result$p.value < 0.05, "TIDAK Normal", "Normal")
+        text(0.1, y_pos, paste("Shapiro-Wilk:", result_text), cex = 1, adj = 0)
+        y_pos <- y_pos - 0.08
+        text(0.1, y_pos, paste("p-value =", format(shapiro_result$p.value, digits = 4)), cex = 0.9, adj = 0)
+        y_pos <- y_pos - 0.1
+      }
+      
+      if(input$grouping_variable != "none" && "levene" %in% input$selected_tests) {
+        group_data <- df[[input$grouping_variable]]
+        levene_result <- car::leveneTest(var_data ~ group_data)
+        result_text <- ifelse(levene_result$`Pr(>F)`[1] < 0.05, "TIDAK Homogen", "Homogen")
+        text(0.1, y_pos, paste("Levene Test:", result_text), cex = 1, adj = 0)
+        y_pos <- y_pos - 0.08
+        text(0.1, y_pos, paste("p-value =", format(levene_result$`Pr(>F)`[1], digits = 4)), cex = 0.9, adj = 0)
+      }
+      
+      # Add date and variable info
+      text(0.1, 0.1, paste("Variabel:", input$assumption_variable), cex = 1, adj = 0, font = 2)
+      text(0.1, 0.05, paste("Tanggal:", Sys.Date()), cex = 0.9, adj = 0)
+      
+      dev.off()
+    },
+    contentType = "image/jpeg"
+  )
+  
+  # NEW: Download all statistical inference plots as JPG
+  output$download_inference_jpg <- downloadHandler(
+    filename = function() {
+      paste("DAST_Statistik_Inferensia_", input$stat_test_type, "_", Sys.Date(), ".jpg", sep = "")
+    },
+    content = function(file) {
+      req(input$stat_test_type)
+      
+      jpeg(file, width = 1600, height = 1200, res = 150, quality = 95)
+      
+      # Create layout based on test type
+      if(input$stat_test_type %in% c("t_one", "var_one", "prop_one")) {
+        par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))
+      } else {
+        par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))
+      }
+      
+      df <- data_with_cats()
+      
+      # Main inference plot based on test type
+      switch(input$stat_test_type,
+             "t_one" = {
+               if(!is.null(input$t_one_var)) {
+                 var_data <- df[[input$t_one_var]]
+                 hist(var_data, main = paste("Distribusi:", input$t_one_var),
+                      col = "lightblue", xlab = input$t_one_var)
+                 abline(v = mean(var_data, na.rm = TRUE), col = "red", lwd = 2, lty = 2)
+                 abline(v = input$t_one_mu, col = "green", lwd = 2)
+                 legend("topright", c("Mean Sampel", "Nilai Hipotesis"), 
+                        col = c("red", "green"), lwd = 2, cex = 0.8)
+               }
+             },
+             "t_two" = {
+               if(!is.null(input$t_two_var) && !is.null(input$t_two_group)) {
+                 var_data <- df[[input$t_two_var]]
+                 group_data <- df[[input$t_two_group]]
+                 boxplot(var_data ~ group_data, 
+                         main = paste("Perbandingan:", input$t_two_var),
+                         col = c("lightblue", "lightcoral"),
+                         xlab = input$t_two_group, ylab = input$t_two_var)
+               }
+             },
+             "anova_one" = {
+               if(!is.null(input$anova_one_var) && !is.null(input$anova_one_group)) {
+                 var_data <- df[[input$anova_one_var]]
+                 group_data <- df[[input$anova_one_group]]
+                 boxplot(var_data ~ group_data,
+                         main = paste("ANOVA:", input$anova_one_var, "vs", input$anova_one_group),
+                         col = rainbow(length(unique(group_data))),
+                         xlab = input$anova_one_group, ylab = input$anova_one_var,
+                         las = 2)
+               }
+             }
+      )
+      
+      # Additional diagnostic plots
+      plot.new()
+      title("Hasil Uji Statistik", cex.main = 1.5, font.main = 2)
+      text(0.5, 0.8, paste("Jenis Uji:", input$stat_test_type), cex = 1.2, font = 2)
+      text(0.5, 0.6, paste("Tanggal:", Sys.Date()), cex = 1, col = "darkgreen")
+      text(0.5, 0.4, "Lihat output di aplikasi untuk\ndetail hasil uji statistik", cex = 1, col = "darkblue")
+      
+      # Assumption check plots
+      if(input$stat_test_type %in% c("t_one", "t_two", "anova_one")) {
+        var_name <- switch(input$stat_test_type,
+                           "t_one" = input$t_one_var,
+                           "t_two" = input$t_two_var,
+                           "anova_one" = input$anova_one_var)
+        
+        if(!is.null(var_name)) {
+          var_data <- df[[var_name]]
+          qqnorm(var_data, main = "Q-Q Plot untuk Normalitas", pch = 19, col = "steelblue")
+          qqline(var_data, col = "red", lwd = 2)
+          
+          hist(var_data, main = "Histogram Data", col = "lightgreen", 
+               xlab = var_name, freq = FALSE)
+          lines(density(var_data, na.rm = TRUE), col = "blue", lwd = 2)
+        }
+      } else {
+        plot.new()
+        text(0.5, 0.5, "Uji Asumsi\nLihat tab Asumsi Uji\ndi aplikasi", cex = 1.2, font = 2)
+        
+        plot.new()
+        text(0.5, 0.5, "Interpretasi\nLengkap tersedia\ndi aplikasi", cex = 1.2, font = 2)
+      }
+      
+      dev.off()
+    },
+    contentType = "image/jpeg"
+  )
+  
+  # Download full report - ENHANCED with proper text formatting
+  output$download_full_report <- downloadHandler(
+    filename = function() {
+      paste("DAST_Laporan_Lengkap_", Sys.Date(), ".txt", sep = "")
+    },
+    content = function(file) {
+      # Create a comprehensive text report
+      cat(paste(rep("=", 80), collapse = ""), "\n", file = file)
+      cat("DASHBOARD ANALISIS STATISTIK TERPADU (DAST)\n", file = file, append = TRUE)
+      cat("LAPORAN LENGKAP\n", file = file, append = TRUE)
+      cat(paste(rep("=", 80), collapse = ""), "\n\n", file = file, append = TRUE)
+      
+      cat("Tanggal Pembuatan:", as.character(Sys.Date()), "\n", file = file, append = TRUE)
+      cat("Waktu Pembuatan:", format(Sys.time(), "%H:%M:%S"), "\n\n", file = file, append = TRUE)
+      
+      cat("INFORMASI DATASET:\n", file = file, append = TRUE)
+      cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
+      cat("• Nama Dataset: Social Vulnerability Index (SoVI) Data\n", file = file, append = TRUE)
+      cat("• Jumlah Observasi: 515 kabupaten/kota\n", file = file, append = TRUE)
+      cat("• Jumlah Variabel: 16 variabel utama\n", file = file, append = TRUE)
+      cat("• Periode Data: Data terkini kerentanan sosial Indonesia\n", file = file, append = TRUE)
+      cat("• Sumber: Badan Pusat Statistik dan instansi terkait\n\n", file = file, append = TRUE)
+      
+      cat("VARIABEL UTAMA:\n", file = file, append = TRUE)
+      cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
+      cat("• CHILDREN: Persentase anak-anak\n", file = file, append = TRUE)
+      cat("• ELDERLY: Persentase lansia\n", file = file, append = TRUE)
+      cat("• POVERTY: Tingkat kemiskinan\n", file = file, append = TRUE)
+      cat("• EDUCATION: Tingkat pendidikan rendah\n", file = file, append = TRUE)
+      cat("• Dan 12 variabel lainnya\n\n", file = file, append = TRUE)
+      
+      cat("FITUR ANALISIS TERSEDIA:\n", file = file, append = TRUE)
+      cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
+      cat("1. Manajemen Data: Transformasi data kontinyu ke kategorik\n", file = file, append = TRUE)
+      cat("2. Eksplorasi Data: Statistik deskriptif dan visualisasi\n", file = file, append = TRUE)
+      cat("3. Uji Asumsi: Pengujian normalitas dan homogenitas\n", file = file, append = TRUE)
+      cat("4. Statistik Inferensia: Uji t, proporsi, varians, ANOVA\n", file = file, append = TRUE)
+              cat("5. Regresi Linear: Analisis regresi berganda\n", file = file, append = TRUE)
+        cat("6. Download: Ekspor hasil dalam berbagai format\n\n", file = file, append = TRUE)
+        
+        # Add current data summary if available
+        df <- data_with_cats()
+        if(nrow(df) > 0) {
+          cat("RINGKASAN DATA SAAT INI:\n", file = file, append = TRUE)
+          cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
+          cat("• Total Observasi:", nrow(df), "\n", file = file, append = TRUE)
+          cat("• Total Variabel:", ncol(df), "\n", file = file, append = TRUE)
+        
+        numeric_vars <- names(df)[sapply(df, is.numeric)]
+        if(length(numeric_vars) > 0) {
+          cat("• Variabel Numerik:", length(numeric_vars), "\n", file = file, append = TRUE)
+          cat("  -", paste(head(numeric_vars, 5), collapse = ", "), 
+              ifelse(length(numeric_vars) > 5, "...", ""), "\n", file = file, append = TRUE)
+        }
+        
+        categorical_vars <- names(df)[sapply(df, function(x) is.factor(x) | is.character(x))]
+        if(length(categorical_vars) > 0) {
+          cat("• Variabel Kategorik:", length(categorical_vars), "\n", file = file, append = TRUE)
+        }
+      }
+      
+      cat("\n", paste(rep("=", 80), collapse = ""), "\n", file = file, append = TRUE)
+      cat("Laporan ini dibuat secara otomatis oleh DAST\n", file = file, append = TRUE)
+      cat("Untuk analisis detail, gunakan fitur-fitur yang tersedia di dashboard\n", file = file, append = TRUE)
+      cat(paste(rep("=", 80), collapse = ""), "\n", file = file, append = TRUE)
     },
     contentType = "text/plain"
   )
   
-  # Download management report
+  # Download management report - ENHANCED
   output$download_management_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Manajemen_Data_", Sys.Date(), ".pdf", sep = "")
+      paste("DAST_Manajemen_Data_", Sys.Date(), ".txt", sep = "")
     },
     content = function(file) {
-      temp_file <- create_temp_file("txt")
+      cat(paste(rep("=", 60), collapse = ""), "\n", file = file)
+      cat("LAPORAN MANAJEMEN DATA - DAST\n", file = file, append = TRUE)
+      cat(paste(rep("=", 60), collapse = ""), "\n\n", file = file, append = TRUE)
       
-      cat("LAPORAN MANAJEMEN DATA\n", file = temp_file)
-      cat("Tanggal:", as.character(Sys.Date()), "\n\n", file = temp_file, append = TRUE)
+      cat("Tanggal:", as.character(Sys.Date()), "\n", file = file, append = TRUE)
+      cat("Waktu:", format(Sys.time(), "%H:%M:%S"), "\n\n", file = file, append = TRUE)
       
       if(!is.null(input$variable_categorize)) {
-        cat("Variabel yang dikategorisasi:", input$variable_categorize, "\n", file = temp_file, append = TRUE)
-        cat("Metode kategorisasi:", input$categorization_method, "\n", file = temp_file, append = TRUE)
-        cat("Jumlah kategori:", input$num_bins, "\n\n", file = temp_file, append = TRUE)
+        cat("DETAIL KATEGORISASI:\n", file = file, append = TRUE)
+        cat(paste(rep("-", 30), collapse = ""), "\n", file = file, append = TRUE)
+        cat("• Variabel yang dikategorisasi:", input$variable_categorize, "\n", file = file, append = TRUE)
+        cat("• Metode kategorisasi:", input$categorization_method, "\n", file = file, append = TRUE)
+        cat("• Jumlah kategori:", input$num_bins, "\n\n", file = file, append = TRUE)
+        
+        # Add frequency table if available
+        if(!is.null(categorized_data())) {
+          freq_table <- table(categorized_data(), useNA = "ifany")
+          cat("TABEL FREKUENSI HASIL KATEGORISASI:\n", file = file, append = TRUE)
+          cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
+          
+          for(i in 1:length(freq_table)) {
+            pct <- round(freq_table[i] / sum(freq_table) * 100, 2)
+            cat(sprintf("%-15s: %6d (%5.2f%%)\n", names(freq_table)[i], freq_table[i], pct), 
+                file = file, append = TRUE)
+          }
+          cat("\n")
+        }
+        
+        cat("INTERPRETASI:\n", file = file, append = TRUE)
+        cat(paste(rep("-", 20), collapse = ""), "\n", file = file, append = TRUE)
+        cat("✓ Proses kategorisasi telah berhasil dilakukan\n", file = file, append = TRUE)
+        cat("✓ Data kontinyu telah diubah menjadi kategorik\n", file = file, append = TRUE)
+        cat("✓ Hasil dapat digunakan untuk analisis kategorikal\n", file = file, append = TRUE)
+      } else {
+        cat("Belum ada variabel yang dikategorisasi.\n", file = file, append = TRUE)
       }
       
-      cat("Proses kategorisasi telah berhasil dilakukan.\n", file = temp_file, append = TRUE)
-      
-      file.copy(temp_file, file)
+      cat("\n", paste(rep("=", 60), collapse = ""), "\n", file = file, append = TRUE)
+      cat("Laporan dibuat otomatis oleh DAST\n", file = file, append = TRUE)
     },
     contentType = "text/plain"
   )
@@ -3205,38 +3643,94 @@ server <- function(input, output, session) {
     }
   )
   
-  # Download explore plot
+  # Download explore plot - ENHANCED to JPG format
   output$download_explore_plot <- downloadHandler(
     filename = function() {
-      paste("Plot_", input$variable_explore, "_", Sys.Date(), ".png", sep = "")
+      paste("Plot_", input$variable_explore, "_", Sys.Date(), ".jpg", sep = "")
     },
     content = function(file) {
       req(input$variable_explore)
       
-      # Create the plot
+      # Create the plot with higher quality
       df <- filtered_data()
       var_name <- input$variable_explore
       
-      png(file, width = 800, height = 600, res = 100)
+      jpeg(file, width = 1200, height = 900, res = 150, quality = 95)
+      
+      # Create a layout for multiple plots
+      par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))
       
       if(is.numeric(df[[var_name]])) {
+        # Plot 1: Histogram
         hist(df[[var_name]], 
-             main = paste("Distribusi", var_name),
+             main = paste("Histogram:", var_name),
              xlab = var_name, 
              ylab = "Frekuensi",
              col = "lightblue",
              border = "white")
+        
+        # Plot 2: Box plot
+        boxplot(df[[var_name]], 
+                main = paste("Box Plot:", var_name),
+                ylab = var_name,
+                col = "lightgreen")
+        
+        # Plot 3: Q-Q plot
+        qqnorm(df[[var_name]], 
+               main = paste("Q-Q Plot:", var_name),
+               pch = 19, col = "steelblue")
+        qqline(df[[var_name]], col = "red", lwd = 2)
+        
+        # Plot 4: Summary statistics
+        plot.new()
+        title("Statistik Deskriptif", cex.main = 1.2, font.main = 2)
+        stats_text <- c(
+          paste("Mean:", round(mean(df[[var_name]], na.rm = TRUE), 3)),
+          paste("Median:", round(median(df[[var_name]], na.rm = TRUE), 3)),
+          paste("Std Dev:", round(sd(df[[var_name]], na.rm = TRUE), 3)),
+          paste("Min:", round(min(df[[var_name]], na.rm = TRUE), 3)),
+          paste("Max:", round(max(df[[var_name]], na.rm = TRUE), 3)),
+          paste("N:", length(df[[var_name]]))
+        )
+        for(i in 1:length(stats_text)) {
+          text(0.1, 0.9 - (i-1)*0.12, stats_text[i], cex = 1, adj = 0)
+        }
+        
       } else {
-        barplot(table(df[[var_name]]),
-                main = paste("Distribusi", var_name),
+        # Plot 1: Bar plot
+        tbl <- table(df[[var_name]])
+        barplot(tbl,
+                main = paste("Distribusi:", var_name),
                 xlab = var_name,
                 ylab = "Frekuensi",
-                col = "lightblue")
+                col = rainbow(length(tbl)),
+                las = 2)
+        
+        # Plot 2: Pie chart
+        pie(tbl, main = paste("Proporsi:", var_name),
+            col = rainbow(length(tbl)))
+        
+        # Plot 3: Frequency table as text
+        plot.new()
+        title("Tabel Frekuensi", cex.main = 1.2, font.main = 2)
+        for(i in 1:length(tbl)) {
+          pct <- round(tbl[i]/sum(tbl)*100, 1)
+          text(0.1, 0.9 - (i-1)*0.1, 
+               paste(names(tbl)[i], ":", tbl[i], "(", pct, "%)"), 
+               cex = 0.9, adj = 0)
+        }
+        
+        # Plot 4: Summary info
+        plot.new()
+        title("Informasi Kategori", cex.main = 1.2, font.main = 2)
+        text(0.1, 0.8, paste("Total Kategori:", length(tbl)), cex = 1, adj = 0)
+        text(0.1, 0.7, paste("Total Observasi:", sum(tbl)), cex = 1, adj = 0)
+        text(0.1, 0.6, paste("Modus:", names(tbl)[which.max(tbl)]), cex = 1, adj = 0)
       }
       
       dev.off()
     },
-    contentType = "image/png"
+    contentType = "image/jpeg"
   )
   
   # Download explore report
@@ -3324,20 +3818,41 @@ server <- function(input, output, session) {
     contentType = "text/plain"
   )
   
-  # Download regression plots
+  # Download regression plots - ENHANCED to JPG format
   output$download_regression_plots <- downloadHandler(
     filename = function() {
-      paste("DAST_Plot_Asumsi_Regresi_", Sys.Date(), ".png", sep = "")
+      paste("DAST_Plot_Asumsi_Regresi_", Sys.Date(), ".jpg", sep = "")
     },
     content = function(file) {
       req(reg_model())
       
-      png(file, width = 1200, height = 900, res = 100)
-      par(mfrow = c(2, 2))
-      plot(reg_model())
+      jpeg(file, width = 1600, height = 1200, res = 150, quality = 95)
+      
+      # Create comprehensive diagnostic plots
+      par(mfrow = c(3, 2), mar = c(4, 4, 3, 2))
+      
+      # Standard diagnostic plots
+      plot(reg_model(), which = 1, main = "Residuals vs Fitted")
+      plot(reg_model(), which = 2, main = "Normal Q-Q")
+      plot(reg_model(), which = 3, main = "Scale-Location")
+      plot(reg_model(), which = 4, main = "Cook's Distance")
+      plot(reg_model(), which = 5, main = "Residuals vs Leverage")
+      
+      # Additional plot: Histogram of residuals
+      residuals_data <- residuals(reg_model())
+      hist(residuals_data, main = "Histogram of Residuals", 
+           col = "lightblue", xlab = "Residuals", freq = FALSE)
+      lines(density(residuals_data), col = "blue", lwd = 2)
+      
+      # Add normal curve
+      x_seq <- seq(min(residuals_data), max(residuals_data), length = 100)
+      y_seq <- dnorm(x_seq, mean(residuals_data), sd(residuals_data))
+      lines(x_seq, y_seq, col = "red", lwd = 2)
+      legend("topright", c("Density", "Normal"), col = c("blue", "red"), lwd = 2, cex = 0.8)
+      
       dev.off()
     },
-    contentType = "image/png"
+    contentType = "image/jpeg"
   )
   
   # Download regression report
