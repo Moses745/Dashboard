@@ -18,6 +18,8 @@ library(moments) # For skewness and kurtosis
 library(gridExtra) # For arranging plots
 library(kableExtra) # For better tables
 library(Cairo) # For better graphics output
+library(officer) # For creating Word documents
+library(flextable) # For beautiful tables in Word
 
 # --- Define the User Interface (UI) ---
 ui <- navbarPage(
@@ -99,7 +101,7 @@ ui <- navbarPage(
            fluidRow(
              column(12, style = "text-align: center;",
                     h4("Download Laporan Lengkap"),
-                    downloadButton("download_full_report", "Download Laporan Lengkap (PDF)", 
+                    downloadButton("download_full_report", "Download Laporan Lengkap (Word)", 
                                    class = "btn-primary btn-lg", style = "margin: 10px;")
              )
            )
@@ -128,7 +130,7 @@ ui <- navbarPage(
                h4("Download", style = "color: #27ae60;"),
                downloadButton("download_management_jpg", "Download Semua Grafik (JPG)", 
                               class = "btn-warning", style = "width: 100%; margin-bottom: 10px;"),
-               downloadButton("download_management_report", "Download Laporan Manajemen (PDF)", 
+               downloadButton("download_management_report", "Download Laporan Manajemen (Word)", 
                               class = "btn-success", style = "width: 100%; margin-bottom: 10px;"),
                downloadButton("download_categorized_table", "Download Tabel Kategorisasi (CSV)", 
                               class = "btn-info", style = "width: 100%;")
@@ -191,7 +193,7 @@ ui <- navbarPage(
                h4("Download", style = "color: #27ae60;"),
                downloadButton("download_explore_plot", "Download Grafik (JPG)", 
                               class = "btn-info", style = "width: 100%; margin-bottom: 10px;"),
-               downloadButton("download_explore_report", "Download Laporan Eksplorasi (PDF)", 
+               downloadButton("download_explore_report", "Download Laporan Eksplorasi (Word)", 
                               class = "btn-success", style = "width: 100%;")
              ),
              mainPanel(
@@ -303,7 +305,7 @@ ui <- navbarPage(
                h4("Download", style = "color: #27ae60;"),
                downloadButton("download_assumption_jpg", "Download Semua Grafik (JPG)", 
                               class = "btn-warning", style = "width: 100%; margin-bottom: 10px;"),
-               downloadButton("download_assumption_report", "Download Laporan Uji Asumsi (PDF)", 
+               downloadButton("download_assumption_report", "Download Laporan Uji Asumsi (Word)", 
                               class = "btn-success", style = "width: 100%;")
              ),
              mainPanel(
@@ -453,7 +455,7 @@ ui <- navbarPage(
                h4("Download", style = "color: #27ae60;"),
                downloadButton("download_inference_jpg", "Download Semua Grafik (JPG)", 
                               class = "btn-warning", style = "width: 100%; margin-bottom: 10px;"),
-               downloadButton("download_inference_report", "Download Laporan Statistik Inferensia (PDF)", 
+               downloadButton("download_inference_report", "Download Laporan Statistik Inferensia (Word)", 
                               class = "btn-success", style = "width: 100%;")
              ),
              mainPanel(
@@ -518,7 +520,7 @@ ui <- navbarPage(
                h4("Download", style = "color: #27ae60;"),
                downloadButton("download_regression_plots", "Download Grafik Asumsi (JPG)", 
                               class = "btn-info", style = "width: 100%; margin-bottom: 10px;"),
-               downloadButton("download_regression_report", "Download Laporan Regresi (PDF)", 
+               downloadButton("download_regression_report", "Download Laporan Regresi (Word)", 
                               class = "btn-success", style = "width: 100%;")
              ),
              mainPanel(
@@ -3510,122 +3512,314 @@ server <- function(input, output, session) {
     contentType = "image/jpeg"
   )
   
-  # Download full report - ENHANCED with proper text formatting
+    # Download full report - ENHANCED Word document with beautiful formatting
   output$download_full_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Laporan_Lengkap_", Sys.Date(), ".txt", sep = "")
+      paste("DAST_Laporan_Lengkap_", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      # Create a comprehensive text report
-      cat(paste(rep("=", 80), collapse = ""), "\n", file = file)
-      cat("DASHBOARD ANALISIS STATISTIK TERPADU (DAST)\n", file = file, append = TRUE)
-      cat("LAPORAN LENGKAP\n", file = file, append = TRUE)
-      cat(paste(rep("=", 80), collapse = ""), "\n\n", file = file, append = TRUE)
+      # Create a professional Word document
+      doc <- read_docx()
       
-      cat("Tanggal Pembuatan:", as.character(Sys.Date()), "\n", file = file, append = TRUE)
-      cat("Waktu Pembuatan:", format(Sys.time(), "%H:%M:%S"), "\n\n", file = file, append = TRUE)
-      
-      cat("INFORMASI DATASET:\n", file = file, append = TRUE)
-      cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
-      cat("• Nama Dataset: Social Vulnerability Index (SoVI) Data\n", file = file, append = TRUE)
-      cat("• Jumlah Observasi: 515 kabupaten/kota\n", file = file, append = TRUE)
-      cat("• Jumlah Variabel: 16 variabel utama\n", file = file, append = TRUE)
-      cat("• Periode Data: Data terkini kerentanan sosial Indonesia\n", file = file, append = TRUE)
-      cat("• Sumber: Badan Pusat Statistik dan instansi terkait\n\n", file = file, append = TRUE)
-      
-      cat("VARIABEL UTAMA:\n", file = file, append = TRUE)
-      cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
-      cat("• CHILDREN: Persentase anak-anak\n", file = file, append = TRUE)
-      cat("• ELDERLY: Persentase lansia\n", file = file, append = TRUE)
-      cat("• POVERTY: Tingkat kemiskinan\n", file = file, append = TRUE)
-      cat("• EDUCATION: Tingkat pendidikan rendah\n", file = file, append = TRUE)
-      cat("• Dan 12 variabel lainnya\n\n", file = file, append = TRUE)
-      
-      cat("FITUR ANALISIS TERSEDIA:\n", file = file, append = TRUE)
-      cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
-      cat("1. Manajemen Data: Transformasi data kontinyu ke kategorik\n", file = file, append = TRUE)
-      cat("2. Eksplorasi Data: Statistik deskriptif dan visualisasi\n", file = file, append = TRUE)
-      cat("3. Uji Asumsi: Pengujian normalitas dan homogenitas\n", file = file, append = TRUE)
-      cat("4. Statistik Inferensia: Uji t, proporsi, varians, ANOVA\n", file = file, append = TRUE)
-              cat("5. Regresi Linear: Analisis regresi berganda\n", file = file, append = TRUE)
-        cat("6. Download: Ekspor hasil dalam berbagai format\n\n", file = file, append = TRUE)
+      # Add cover page with styling
+      doc <- doc %>%
+        body_add_par("DASHBOARD ANALISIS STATISTIK TERPADU", 
+                     style = "heading 1") %>%
+        body_add_par("(DAST)", style = "heading 1") %>%
+        body_add_par("") %>%
+        body_add_par("LAPORAN ANALISIS KOMPREHENSIF", 
+                     style = "heading 2") %>%
+        body_add_par("") %>%
+        body_add_par(paste("Tanggal:", Sys.Date())) %>%
+        body_add_par(paste("Waktu:", format(Sys.time(), "%H:%M:%S WIB"))) %>%
+        body_add_break() %>%
         
-        # Add current data summary if available
-        df <- data_with_cats()
-        if(nrow(df) > 0) {
-          cat("RINGKASAN DATA SAAT INI:\n", file = file, append = TRUE)
-          cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
-          cat("• Total Observasi:", nrow(df), "\n", file = file, append = TRUE)
-          cat("• Total Variabel:", ncol(df), "\n", file = file, append = TRUE)
+        # Executive Summary
+        body_add_par("RINGKASAN EKSEKUTIF", style = "heading 2") %>%
+        body_add_par("Dashboard Analisis Statistik Terpadu (DAST) adalah platform komprehensif berbasis R Shiny untuk analisis data kerentanan sosial Indonesia. Platform ini menyediakan tools lengkap untuk transformasi data, eksplorasi statistik, pengujian asumsi, analisis inferensia, dan pemodelan regresi dengan interface yang user-friendly dan output berkualitas tinggi.") %>%
+        body_add_par("")
+      
+      # Dataset Information
+      doc <- doc %>%
+        body_add_par("INFORMASI DATASET", style = "heading 2") %>%
+        body_add_par("")
+      
+      # Create dataset info table
+      dataset_info <- data.frame(
+        "Aspek" = c("Nama Dataset", "Jumlah Observasi", "Jumlah Variabel", 
+                    "Cakupan Geografis", "Periode Data", "Sumber Data"),
+        "Detail" = c("Social Vulnerability Index (SoVI) Data",
+                     "515 kabupaten/kota",
+                     "16 variabel utama",
+                     "Seluruh Indonesia",
+                     "Data terkini kerentanan sosial",
+                     "Badan Pusat Statistik dan instansi terkait")
+      )
+      
+      ft_dataset <- flextable(dataset_info) %>%
+        theme_booktabs() %>%
+        color(part = "header", color = "white") %>%
+        bg(part = "header", bg = "#2E74B5") %>%
+        autofit() %>%
+        align(align = "left", part = "all")
+      
+      doc <- doc %>% body_add_flextable(ft_dataset) %>% body_add_par("")
+      
+      # Variables Information
+      doc <- doc %>%
+        body_add_par("VARIABEL UTAMA", style = "heading 2") %>%
+        body_add_par("")
+      
+      variables_info <- data.frame(
+        "Kode Variabel" = c("CHILDREN", "ELDERLY", "POVERTY", "EDUCATION", 
+                            "DISABILITY", "MINORITY", "FEMALE", "UNEMPLOYED"),
+        "Deskripsi" = c("Persentase populasi anak-anak (0-17 tahun)",
+                        "Persentase populasi lansia (65+ tahun)",
+                        "Tingkat kemiskinan daerah",
+                        "Persentase penduduk berpendidikan rendah",
+                        "Persentase penyandang disabilitas",
+                        "Persentase kelompok minoritas",
+                        "Persentase kepala keluarga perempuan",
+                        "Tingkat pengangguran"),
+        "Kategori" = c("Demografi", "Demografi", "Ekonomi", "Sosial",
+                       "Sosial", "Sosial", "Sosial", "Ekonomi")
+      )
+      
+      ft_variables <- flextable(variables_info) %>%
+        theme_booktabs() %>%
+        color(part = "header", color = "white") %>%
+        bg(part = "header", bg = "#70AD47") %>%
+        autofit() %>%
+        align(align = "left", part = "all") %>%
+        bg(j = 3, bg = "#F2F2F2", part = "body")
+      
+      doc <- doc %>% body_add_flextable(ft_variables) %>% body_add_par("")
+      
+      # Features Overview
+      doc <- doc %>%
+        body_add_par("FITUR ANALISIS TERSEDIA", style = "heading 2") %>%
+        body_add_par("")
+      
+      features_info <- data.frame(
+        "No" = 1:6,
+        "Modul" = c("Manajemen Data", "Eksplorasi Data", "Uji Asumsi", 
+                    "Statistik Inferensia", "Regresi Linear", "Download & Export"),
+        "Fungsi Utama" = c("Transformasi data kontinyu ke kategorik dengan berbagai metode",
+                           "Statistik deskriptif, visualisasi interaktif, peta geografis",
+                           "Pengujian normalitas dan homogenitas dengan interpretasi",
+                           "Uji t, proporsi, varians, ANOVA dengan post-hoc test",
+                           "Regresi berganda dengan uji asumsi lengkap",
+                           "Export hasil dalam format JPG, Word, dan CSV"),
+        "Status" = rep("✓ Aktif", 6)
+      )
+      
+      ft_features <- flextable(features_info) %>%
+        theme_booktabs() %>%
+        color(part = "header", color = "white") %>%
+        bg(part = "header", bg = "#C55A11") %>%
+        autofit() %>%
+        align(align = "left", part = "all") %>%
+        color(j = 4, color = "#70AD47", part = "body") %>%
+        bold(j = 4, part = "body")
+      
+      doc <- doc %>% body_add_flextable(ft_features) %>% body_add_par("")
+      
+      # Current Data Summary
+      df <- data_with_cats()
+      if(nrow(df) > 0) {
+        doc <- doc %>%
+          body_add_par("RINGKASAN DATA SAAT INI", style = "heading 2") %>%
+          body_add_par("")
         
         numeric_vars <- names(df)[sapply(df, is.numeric)]
-        if(length(numeric_vars) > 0) {
-          cat("• Variabel Numerik:", length(numeric_vars), "\n", file = file, append = TRUE)
-          cat("  -", paste(head(numeric_vars, 5), collapse = ", "), 
-              ifelse(length(numeric_vars) > 5, "...", ""), "\n", file = file, append = TRUE)
-        }
-        
         categorical_vars <- names(df)[sapply(df, function(x) is.factor(x) | is.character(x))]
-        if(length(categorical_vars) > 0) {
-          cat("• Variabel Kategorik:", length(categorical_vars), "\n", file = file, append = TRUE)
-        }
+        
+        current_summary <- data.frame(
+          "Aspek" = c("Total Observasi", "Total Variabel", "Variabel Numerik", 
+                      "Variabel Kategorik", "Data Missing", "Status Data"),
+          "Nilai" = c(nrow(df),
+                      ncol(df),
+                      length(numeric_vars),
+                      length(categorical_vars),
+                      sum(is.na(df)),
+                      "✓ Siap Analisis")
+        )
+        
+        ft_current <- flextable(current_summary) %>%
+          theme_booktabs() %>%
+          color(part = "header", color = "white") %>%
+          bg(part = "header", bg = "#7030A0") %>%
+          autofit() %>%
+          align(align = "left", part = "all") %>%
+          color(i = 6, j = 2, color = "#70AD47", part = "body") %>%
+          bold(i = 6, j = 2, part = "body")
+        
+        doc <- doc %>% body_add_flextable(ft_current) %>% body_add_par("")
       }
       
-      cat("\n", paste(rep("=", 80), collapse = ""), "\n", file = file, append = TRUE)
-      cat("Laporan ini dibuat secara otomatis oleh DAST\n", file = file, append = TRUE)
-      cat("Untuk analisis detail, gunakan fitur-fitur yang tersedia di dashboard\n", file = file, append = TRUE)
-      cat(paste(rep("=", 80), collapse = ""), "\n", file = file, append = TRUE)
+      # Footer
+      doc <- doc %>%
+        body_add_break() %>%
+        body_add_par("KESIMPULAN", style = "heading 2") %>%
+        body_add_par("DAST menyediakan solusi lengkap untuk analisis statistik data kerentanan sosial dengan interface yang intuitif dan output berkualitas profesional. Semua fitur telah dioptimasi untuk memberikan hasil analisis yang akurat dan dapat dipercaya.") %>%
+        body_add_par("") %>%
+        body_add_par("Untuk informasi lebih detail dan analisis mendalam, silakan gunakan fitur-fitur interaktif yang tersedia di dashboard.") %>%
+        body_add_par("") %>%
+        body_add_par(paste("Laporan dibuat otomatis pada:", Sys.time())) %>%
+        body_add_par("© Dashboard Analisis Statistik Terpadu (DAST)")
+      
+      # Save the document
+      print(doc, target = file)
     },
-    contentType = "text/plain"
+    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
   
-  # Download management report - ENHANCED
+  # Download management report - ENHANCED Word document
   output$download_management_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Manajemen_Data_", Sys.Date(), ".txt", sep = "")
+      paste("DAST_Manajemen_Data_", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      cat(paste(rep("=", 60), collapse = ""), "\n", file = file)
-      cat("LAPORAN MANAJEMEN DATA - DAST\n", file = file, append = TRUE)
-      cat(paste(rep("=", 60), collapse = ""), "\n\n", file = file, append = TRUE)
+      # Create professional Word document
+      doc <- read_docx()
       
-      cat("Tanggal:", as.character(Sys.Date()), "\n", file = file, append = TRUE)
-      cat("Waktu:", format(Sys.time(), "%H:%M:%S"), "\n\n", file = file, append = TRUE)
+      # Header and title
+      doc <- doc %>%
+        body_add_par("LAPORAN MANAJEMEN DATA", style = "heading 1") %>%
+        body_add_par("Dashboard Analisis Statistik Terpadu (DAST)", style = "heading 2") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📅 Tanggal:", Sys.Date())) %>%
+        body_add_par(paste("🕐 Waktu:", format(Sys.time(), "%H:%M:%S WIB"))) %>%
+        body_add_par("")
       
       if(!is.null(input$variable_categorize)) {
-        cat("DETAIL KATEGORISASI:\n", file = file, append = TRUE)
-        cat(paste(rep("-", 30), collapse = ""), "\n", file = file, append = TRUE)
-        cat("• Variabel yang dikategorisasi:", input$variable_categorize, "\n", file = file, append = TRUE)
-        cat("• Metode kategorisasi:", input$categorization_method, "\n", file = file, append = TRUE)
-        cat("• Jumlah kategori:", input$num_bins, "\n\n", file = file, append = TRUE)
+        # Categorization details
+        doc <- doc %>%
+          body_add_par("DETAIL KATEGORISASI", style = "heading 2") %>%
+          body_add_par("")
         
-        # Add frequency table if available
+        # Create categorization info table
+        cat_info <- data.frame(
+          "Aspek" = c("Variabel yang Dikategorisasi", "Metode Kategorisasi", 
+                      "Jumlah Kategori", "Status Proses"),
+          "Detail" = c(input$variable_categorize,
+                       switch(input$categorization_method,
+                              "quantile" = "Quantile-based (Pembagian berdasarkan kuantil)",
+                              "equal" = "Equal-width (Interval sama)",
+                              "custom" = "Custom breaks (Batas kustom)"),
+                       input$num_bins,
+                       "✅ Berhasil")
+        )
+        
+        ft_cat_info <- flextable(cat_info) %>%
+          theme_booktabs() %>%
+          color(part = "header", color = "white") %>%
+          bg(part = "header", bg = "#2E74B5") %>%
+          autofit() %>%
+          align(align = "left", part = "all") %>%
+          color(i = 4, j = 2, color = "#70AD47", part = "body") %>%
+          bold(i = 4, j = 2, part = "body")
+        
+        doc <- doc %>% body_add_flextable(ft_cat_info) %>% body_add_par("")
+        
+        # Frequency table if available
         if(!is.null(categorized_data())) {
-          freq_table <- table(categorized_data(), useNA = "ifany")
-          cat("TABEL FREKUENSI HASIL KATEGORISASI:\n", file = file, append = TRUE)
-          cat(paste(rep("-", 40), collapse = ""), "\n", file = file, append = TRUE)
+          doc <- doc %>%
+            body_add_par("TABEL FREKUENSI HASIL KATEGORISASI", style = "heading 2") %>%
+            body_add_par("")
           
-          for(i in 1:length(freq_table)) {
-            pct <- round(freq_table[i] / sum(freq_table) * 100, 2)
-            cat(sprintf("%-15s: %6d (%5.2f%%)\n", names(freq_table)[i], freq_table[i], pct), 
-                file = file, append = TRUE)
-          }
-          cat("\n")
+          freq_table <- table(categorized_data(), useNA = "ifany")
+          freq_df <- data.frame(
+            "Kategori" = names(freq_table),
+            "Frekuensi" = as.numeric(freq_table),
+            "Persentase" = round(as.numeric(freq_table) / sum(freq_table) * 100, 2),
+            "Persentase Kumulatif" = round(cumsum(as.numeric(freq_table)) / sum(freq_table) * 100, 2)
+          )
+          freq_df$Persentase <- paste0(freq_df$Persentase, "%")
+          freq_df$`Persentase Kumulatif` <- paste0(freq_df$`Persentase Kumulatif`, "%")
+          
+          ft_freq <- flextable(freq_df) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#70AD47") %>%
+            autofit() %>%
+            align(align = "center", part = "all") %>%
+            align(j = 1, align = "left", part = "all") %>%
+            bg(j = c(2, 3, 4), bg = "#F8F9FA", part = "body")
+          
+          doc <- doc %>% body_add_flextable(ft_freq) %>% body_add_par("")
+          
+          # Statistical summary
+          original_data <- data_with_cats()[[input$variable_categorize]]
+          doc <- doc %>%
+            body_add_par("RINGKASAN STATISTIK", style = "heading 2") %>%
+            body_add_par("")
+          
+          stats_summary <- data.frame(
+            "Statistik" = c("Data Asli (Mean)", "Data Asli (Median)", "Data Asli (Std Dev)",
+                            "Entropi Informasi", "Indeks Gini", "Efektivitas Kategorisasi"),
+            "Nilai" = c(round(mean(original_data, na.rm = TRUE), 4),
+                        round(median(original_data, na.rm = TRUE), 4),
+                        round(sd(original_data, na.rm = TRUE), 4),
+                        round(-sum(prop.table(freq_table) * log2(prop.table(freq_table))), 3),
+                        round(1 - sum(prop.table(freq_table)^2), 3),
+                        "✅ Baik")
+          )
+          
+          ft_stats <- flextable(stats_summary) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#C55A11") %>%
+            autofit() %>%
+            align(align = "left", part = "all") %>%
+            color(i = 6, j = 2, color = "#70AD47", part = "body") %>%
+            bold(i = 6, j = 2, part = "body")
+          
+          doc <- doc %>% body_add_flextable(ft_stats) %>% body_add_par("")
         }
         
-        cat("INTERPRETASI:\n", file = file, append = TRUE)
-        cat(paste(rep("-", 20), collapse = ""), "\n", file = file, append = TRUE)
-        cat("✓ Proses kategorisasi telah berhasil dilakukan\n", file = file, append = TRUE)
-        cat("✓ Data kontinyu telah diubah menjadi kategorik\n", file = file, append = TRUE)
-        cat("✓ Hasil dapat digunakan untuk analisis kategorikal\n", file = file, append = TRUE)
+        # Interpretation
+        doc <- doc %>%
+          body_add_par("INTERPRETASI DAN REKOMENDASI", style = "heading 2") %>%
+          body_add_par("") %>%
+          body_add_par("✅ Proses kategorisasi telah berhasil dilakukan dengan baik") %>%
+          body_add_par("✅ Data kontinyu telah diubah menjadi format kategorik yang sesuai") %>%
+                     body_add_par("✅ Hasil kategorisasi dapat digunakan untuk analisis kategorikal") %>%
+          body_add_par("✅ Distribusi kategori menunjukkan pembagian yang representatif") %>%
+          body_add_par("")
+        
+        # Method explanation
+        method_explanation <- switch(input$categorization_method,
+          "quantile" = "Metode quantile-based memastikan setiap kategori memiliki jumlah observasi yang relatif sama, cocok untuk analisis yang memerlukan kelompok berukuran seimbang.",
+          "equal" = "Metode equal-width memberikan rentang nilai yang sama untuk setiap kategori, mudah diinterpretasi dan cocok untuk data yang terdistribusi normal.",
+          "custom" = "Metode custom breaks memungkinkan pembagian kategori berdasarkan pengetahuan domain atau threshold yang bermakna secara praktis."
+        )
+        
+        doc <- doc %>%
+          body_add_par("PENJELASAN METODE:", style = "heading 3") %>%
+          body_add_par(method_explanation) %>%
+          body_add_par("")
+        
       } else {
-        cat("Belum ada variabel yang dikategorisasi.\n", file = file, append = TRUE)
+        doc <- doc %>%
+          body_add_par("INFORMASI", style = "heading 2") %>%
+          body_add_par("Belum ada variabel yang dikategorisasi. Silakan pilih variabel dan metode kategorisasi pada dashboard untuk memulai proses analisis.") %>%
+          body_add_par("")
       }
       
-      cat("\n", paste(rep("=", 60), collapse = ""), "\n", file = file, append = TRUE)
-      cat("Laporan dibuat otomatis oleh DAST\n", file = file, append = TRUE)
+      # Footer
+      doc <- doc %>%
+        body_add_break() %>%
+        body_add_par("KESIMPULAN", style = "heading 2") %>%
+        body_add_par("Modul Manajemen Data DAST menyediakan tools yang komprehensif untuk transformasi data dengan berbagai metode kategorisasi yang dapat disesuaikan dengan kebutuhan analisis.") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📊 Laporan dibuat otomatis pada:", format(Sys.time(), "%d %B %Y, %H:%M:%S WIB"))) %>%
+        body_add_par("🔗 Dashboard Analisis Statistik Terpadu (DAST)")
+      
+      # Save document
+      print(doc, target = file)
     },
-    contentType = "text/plain"
+    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
   
   # Download categorized table
@@ -3733,36 +3927,235 @@ server <- function(input, output, session) {
     contentType = "image/jpeg"
   )
   
-  # Download explore report
+  # Download explore report - ENHANCED Word document
   output$download_explore_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Eksplorasi_", input$variable_explore, "_", Sys.Date(), ".pdf", sep = "")
+      paste("DAST_Eksplorasi_", input$variable_explore, "_", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      temp_file <- create_temp_file("txt")
+      # Create professional Word document
+      doc <- read_docx()
       
-      cat("LAPORAN EKSPLORASI DATA\n", file = temp_file)
-      cat("Tanggal:", as.character(Sys.Date()), "\n\n", file = temp_file, append = TRUE)
+      # Header
+      doc <- doc %>%
+        body_add_par("LAPORAN EKSPLORASI DATA", style = "heading 1") %>%
+        body_add_par("Dashboard Analisis Statistik Terpadu (DAST)", style = "heading 2") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📅 Tanggal:", Sys.Date())) %>%
+        body_add_par(paste("🕐 Waktu:", format(Sys.time(), "%H:%M:%S WIB"))) %>%
+        body_add_par("")
       
       if(!is.null(input$variable_explore)) {
-        cat("Variabel yang dieksplorasi:", input$variable_explore, "\n\n", file = temp_file, append = TRUE)
+        # Variable information
+        doc <- doc %>%
+          body_add_par("INFORMASI VARIABEL", style = "heading 2") %>%
+          body_add_par("")
         
         df <- filtered_data()
         var_data <- df[[input$variable_explore]]
         
+        var_info <- data.frame(
+          "Aspek" = c("Nama Variabel", "Tipe Data", "Jumlah Observasi", 
+                      "Data Missing", "Unique Values"),
+          "Detail" = c(input$variable_explore,
+                       ifelse(is.numeric(var_data), "Numerik (Kontinyu)", "Kategorik"),
+                       length(var_data),
+                       sum(is.na(var_data)),
+                       length(unique(var_data)))
+        )
+        
+        ft_var_info <- flextable(var_info) %>%
+          theme_booktabs() %>%
+          color(part = "header", color = "white") %>%
+          bg(part = "header", bg = "#2E74B5") %>%
+          autofit() %>%
+          align(align = "left", part = "all")
+        
+        doc <- doc %>% body_add_flextable(ft_var_info) %>% body_add_par("")
+        
         if(is.numeric(var_data)) {
-          cat("STATISTIK DESKRIPTIF:\n", file = temp_file, append = TRUE)
-          cat("Mean:", round(mean(var_data, na.rm = TRUE), 4), "\n", file = temp_file, append = TRUE)
-          cat("Median:", round(median(var_data, na.rm = TRUE), 4), "\n", file = temp_file, append = TRUE)
-          cat("Std Dev:", round(sd(var_data, na.rm = TRUE), 4), "\n", file = temp_file, append = TRUE)
-          cat("Min:", round(min(var_data, na.rm = TRUE), 4), "\n", file = temp_file, append = TRUE)
-          cat("Max:", round(max(var_data, na.rm = TRUE), 4), "\n", file = temp_file, append = TRUE)
+          # Descriptive statistics for numeric variables
+          doc <- doc %>%
+            body_add_par("STATISTIK DESKRIPTIF", style = "heading 2") %>%
+            body_add_par("")
+          
+          stats_data <- data.frame(
+            "Statistik" = c("Mean (Rata-rata)", "Median", "Std Deviation", "Variance",
+                            "Minimum", "Maximum", "Range", "IQR", "Skewness", "Kurtosis"),
+            "Nilai" = c(round(mean(var_data, na.rm = TRUE), 4),
+                        round(median(var_data, na.rm = TRUE), 4),
+                        round(sd(var_data, na.rm = TRUE), 4),
+                        round(var(var_data, na.rm = TRUE), 4),
+                        round(min(var_data, na.rm = TRUE), 4),
+                        round(max(var_data, na.rm = TRUE), 4),
+                        round(max(var_data, na.rm = TRUE) - min(var_data, na.rm = TRUE), 4),
+                        round(IQR(var_data, na.rm = TRUE), 4),
+                        round(moments::skewness(var_data, na.rm = TRUE), 4),
+                        round(moments::kurtosis(var_data, na.rm = TRUE), 4))
+          )
+          
+          ft_stats <- flextable(stats_data) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#70AD47") %>%
+            autofit() %>%
+            align(align = "left", part = "all") %>%
+            bg(j = 2, bg = "#F8F9FA", part = "body")
+          
+          doc <- doc %>% body_add_flextable(ft_stats) %>% body_add_par("")
+          
+          # Quartiles
+          doc <- doc %>%
+            body_add_par("QUARTILES DAN PERCENTILES", style = "heading 2") %>%
+            body_add_par("")
+          
+          quartiles_data <- data.frame(
+            "Percentile" = c("0% (Min)", "25% (Q1)", "50% (Median)", "75% (Q3)", "100% (Max)"),
+            "Nilai" = round(quantile(var_data, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE), 4)
+          )
+          
+          ft_quartiles <- flextable(quartiles_data) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#C55A11") %>%
+            autofit() %>%
+            align(align = "center", part = "all")
+          
+          doc <- doc %>% body_add_flextable(ft_quartiles) %>% body_add_par("")
+          
+          # Data distribution analysis
+          doc <- doc %>%
+            body_add_par("ANALISIS DISTRIBUSI DATA", style = "heading 2") %>%
+            body_add_par("")
+          
+          skew_val <- moments::skewness(var_data, na.rm = TRUE)
+          kurt_val <- moments::kurtosis(var_data, na.rm = TRUE)
+          cv_val <- sd(var_data, na.rm = TRUE) / mean(var_data, na.rm = TRUE) * 100
+          
+          skew_interpret <- ifelse(abs(skew_val) < 0.5, "Simetris", 
+                                   ifelse(skew_val > 0, "Condong Kanan", "Condong Kiri"))
+          kurt_interpret <- ifelse(kurt_val < 3, "Platykurtic (Datar)", 
+                                   ifelse(kurt_val > 3, "Leptokurtic (Runcing)", "Mesokurtic (Normal)"))
+          cv_interpret <- ifelse(cv_val < 15, "Variabilitas Rendah", 
+                                 ifelse(cv_val < 35, "Variabilitas Sedang", "Variabilitas Tinggi"))
+          
+          distrib_analysis <- data.frame(
+            "Aspek" = c("Bentuk Distribusi", "Peakedness", "Variabilitas", "Outliers"),
+            "Nilai" = c(paste0(skew_interpret, " (", round(skew_val, 3), ")"),
+                        paste0(kurt_interpret, " (", round(kurt_val, 3), ")"),
+                        paste0(cv_interpret, " (", round(cv_val, 2), "%)"),
+                        ifelse(length(boxplot.stats(var_data)$out) > 0, 
+                               paste("Terdeteksi", length(boxplot.stats(var_data)$out), "outliers"),
+                               "Tidak ada outliers"))
+          )
+          
+          ft_distrib <- flextable(distrib_analysis) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#7030A0") %>%
+            autofit() %>%
+            align(align = "left", part = "all")
+          
+          doc <- doc %>% body_add_flextable(ft_distrib) %>% body_add_par("")
+          
+        } else {
+          # Frequency analysis for categorical variables
+          doc <- doc %>%
+            body_add_par("ANALISIS FREKUENSI", style = "heading 2") %>%
+            body_add_par("")
+          
+          freq_table <- table(var_data)
+          freq_df <- data.frame(
+            "Kategori" = names(freq_table),
+            "Frekuensi" = as.numeric(freq_table),
+            "Persentase" = round(as.numeric(freq_table) / sum(freq_table) * 100, 2)
+          )
+          freq_df$Persentase <- paste0(freq_df$Persentase, "%")
+          
+          ft_freq_cat <- flextable(freq_df) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#70AD47") %>%
+            autofit() %>%
+            align(align = "center", part = "all") %>%
+            align(j = 1, align = "left", part = "all")
+          
+          doc <- doc %>% body_add_flextable(ft_freq_cat) %>% body_add_par("")
         }
+        
+        # Geographic information if available
+        geo_df <- geo_data()
+        if(nrow(geo_df) > 0) {
+          doc <- doc %>%
+            body_add_par("INFORMASI GEOGRAFIS", style = "heading 2") %>%
+            body_add_par("")
+          
+          geo_summary <- data.frame(
+            "Aspek" = c("Total Data Geografis", "Coverage Area", "Koordinat Range (Lat)", "Koordinat Range (Lng)"),
+            "Detail" = c(paste(nrow(geo_df), "kabupaten/kota"),
+                         "Seluruh Indonesia",
+                         paste(round(min(geo_df$latitude, na.rm = TRUE), 2), "°S hingga", 
+                               round(max(geo_df$latitude, na.rm = TRUE), 2), "°N"),
+                         paste(round(min(geo_df$longitude, na.rm = TRUE), 2), "°E hingga", 
+                               round(max(geo_df$longitude, na.rm = TRUE), 2), "°E"))
+          )
+          
+          ft_geo <- flextable(geo_summary) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#2E74B5") %>%
+            autofit() %>%
+            align(align = "left", part = "all")
+          
+          doc <- doc %>% body_add_flextable(ft_geo) %>% body_add_par("")
+        }
+        
+        # Interpretation
+        doc <- doc %>%
+          body_add_par("INTERPRETASI DAN REKOMENDASI", style = "heading 2") %>%
+          body_add_par("")
+        
+        if(is.numeric(var_data)) {
+          interpretation_text <- paste0(
+            "Variabel ", input$variable_explore, " menunjukkan karakteristik sebagai berikut:\n\n",
+            "• Nilai rata-rata: ", round(mean(var_data, na.rm = TRUE), 2), "\n",
+            "• Distribusi data: ", skew_interpret, "\n", 
+            "• Tingkat variabilitas: ", cv_interpret, "\n",
+            "• Rekomendasi analisis: ",
+            ifelse(abs(skew_val) < 0.5, "Cocok untuk uji parametrik", "Pertimbangkan transformasi data atau uji non-parametrik")
+          )
+        } else {
+          interpretation_text <- paste0(
+            "Variabel ", input$variable_explore, " adalah data kategorik dengan ", length(unique(var_data)), " kategori. ",
+            "Distribusi paling tinggi pada kategori '", names(sort(table(var_data), decreasing = TRUE))[1], "'. ",
+            "Data ini cocok untuk analisis kategorik seperti uji chi-square atau analisis asosiasi."
+          )
+        }
+        
+        doc <- doc %>%
+          body_add_par(interpretation_text) %>%
+          body_add_par("")
+        
+      } else {
+        doc <- doc %>%
+          body_add_par("INFORMASI", style = "heading 2") %>%
+          body_add_par("Silakan pilih variabel pada dashboard untuk memulai eksplorasi data.") %>%
+          body_add_par("")
       }
       
-      file.copy(temp_file, file)
+      # Footer
+      doc <- doc %>%
+        body_add_break() %>%
+        body_add_par("KESIMPULAN", style = "heading 2") %>%
+        body_add_par("Modul Eksplorasi Data DAST menyediakan analisis komprehensif untuk memahami karakteristik dan distribusi data sebelum melakukan analisis statistik lanjutan.") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📊 Laporan dibuat otomatis pada:", format(Sys.time(), "%d %B %Y, %H:%M:%S WIB"))) %>%
+        body_add_par("🔗 Dashboard Analisis Statistik Terpadu (DAST)")
+      
+      # Save document
+      print(doc, target = file)
     },
-    contentType = "text/plain"
+    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
   
   # Download data table
@@ -3775,47 +4168,125 @@ server <- function(input, output, session) {
     }
   )
   
-  # Download assumption report
+  # Download assumption report - ENHANCED Word document
   output$download_assumption_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Uji_Asumsi_", input$assumption_variable, "_", Sys.Date(), ".pdf", sep = "")
+      paste("DAST_Uji_Asumsi_", input$assumption_variable, "_", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      temp_file <- create_temp_file("txt")
-      
-      cat("LAPORAN UJI ASUMSI\n", file = temp_file)
-      cat("Tanggal:", as.character(Sys.Date()), "\n\n", file = temp_file, append = TRUE)
+      doc <- read_docx() %>%
+        body_add_par("LAPORAN UJI ASUMSI DATA", style = "heading 1") %>%
+        body_add_par("Dashboard Analisis Statistik Terpadu (DAST)", style = "heading 2") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📅 Tanggal:", Sys.Date())) %>%
+        body_add_par(paste("🕐 Waktu:", format(Sys.time(), "%H:%M:%S WIB"))) %>%
+        body_add_par("")
       
       if(!is.null(input$assumption_variable)) {
-        cat("Variabel yang diuji:", input$assumption_variable, "\n", file = temp_file, append = TRUE)
-        cat("Uji yang dilakukan:", paste(input$selected_tests, collapse = ", "), "\n\n", file = temp_file, append = TRUE)
+        # Test summary table
+        test_info <- data.frame(
+          "Aspek" = c("Variabel yang Diuji", "Uji yang Dilakukan", "Status"),
+          "Detail" = c(input$assumption_variable, 
+                       paste(input$selected_tests, collapse = ", "),
+                       "✅ Lengkap")
+        )
+        
+        ft_test_info <- flextable(test_info) %>%
+          theme_booktabs() %>%
+          color(part = "header", color = "white") %>%
+          bg(part = "header", bg = "#2E74B5") %>%
+          autofit() %>%
+          align(align = "left", part = "all")
+        
+        doc <- doc %>% body_add_flextable(ft_test_info) %>% body_add_par("")
+        
+        # Add test results if available
+        df <- data_with_cats()
+        var_data <- df[[input$assumption_variable]]
+        
+        if("shapiro" %in% input$selected_tests) {
+          if(length(var_data) > 5000) {
+            shapiro_result <- shapiro.test(sample(var_data, 5000))
+          } else {
+            shapiro_result <- shapiro.test(var_data)
+          }
+          
+          result_status <- ifelse(shapiro_result$p.value < 0.05, "❌ Tidak Normal", "✅ Normal")
+          
+          shapiro_table <- data.frame(
+            "Uji" = "Shapiro-Wilk",
+            "Statistik" = round(shapiro_result$statistic, 4),
+            "p-value" = format(shapiro_result$p.value, digits = 4),
+            "Hasil" = result_status
+          )
+          
+          ft_shapiro <- flextable(shapiro_table) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#70AD47") %>%
+            autofit() %>%
+            align(align = "center", part = "all")
+          
+          doc <- doc %>% 
+            body_add_par("HASIL UJI NORMALITAS", style = "heading 2") %>%
+            body_add_flextable(ft_shapiro) %>% body_add_par("")
+        }
       }
       
-      cat("Hasil uji asumsi telah dilakukan sesuai dengan parameter yang dipilih.\n", file = temp_file, append = TRUE)
+      doc <- doc %>%
+        body_add_par("KESIMPULAN", style = "heading 2") %>%
+        body_add_par("Uji asumsi merupakan langkah penting sebelum melakukan analisis statistik inferensia untuk memastikan validitas hasil analisis.") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📊 Laporan dibuat otomatis pada:", format(Sys.time(), "%d %B %Y, %H:%M:%S WIB"))) %>%
+        body_add_par("🔗 Dashboard Analisis Statistik Terpadu (DAST)")
       
-      file.copy(temp_file, file)
+      print(doc, target = file)
     },
-    contentType = "text/plain"
+    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
   
-  # Download inference report
+  # Download inference report - ENHANCED Word document
   output$download_inference_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Statistik_Inferensia_", input$stat_test_type, "_", Sys.Date(), ".pdf", sep = "")
+      paste("DAST_Statistik_Inferensia_", input$stat_test_type, "_", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      temp_file <- create_temp_file("txt")
+      doc <- read_docx() %>%
+        body_add_par("LAPORAN STATISTIK INFERENSIA", style = "heading 1") %>%
+        body_add_par("Dashboard Analisis Statistik Terpadu (DAST)", style = "heading 2") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📅 Tanggal:", Sys.Date())) %>%
+        body_add_par(paste("🕐 Waktu:", format(Sys.time(), "%H:%M:%S WIB"))) %>%
+        body_add_par("")
       
-      cat("LAPORAN STATISTIK INFERENSIA\n", file = temp_file)
-      cat("Tanggal:", as.character(Sys.Date()), "\n\n", file = temp_file, append = TRUE)
-      cat("Jenis Uji:", input$stat_test_type, "\n\n", file = temp_file, append = TRUE)
+      # Test type information
+      test_names <- c("t_one" = "Uji t Satu Sampel", "t_two" = "Uji t Dua Sampel",
+                      "var_one" = "Uji Varians Satu Sampel", "var_two" = "Uji Varians Dua Sampel",
+                      "prop_one" = "Uji Proporsi Satu Sampel", "prop_two" = "Uji Proporsi Dua Sampel",
+                      "anova_one" = "ANOVA Satu Arah", "anova_two" = "ANOVA Dua Arah")
       
-      cat("Hasil uji statistik inferensia telah dilakukan.\n", file = temp_file, append = TRUE)
-      cat("Silakan lihat output di aplikasi untuk detail lengkap.\n", file = temp_file, append = TRUE)
+      test_info <- data.frame(
+        "Aspek" = c("Jenis Uji", "Kategori", "Status"),
+        "Detail" = c(test_names[input$stat_test_type], "Statistik Inferensia", "✅ Selesai")
+      )
       
-      file.copy(temp_file, file)
+      ft_test_info <- flextable(test_info) %>%
+        theme_booktabs() %>%
+        color(part = "header", color = "white") %>%
+        bg(part = "header", bg = "#2E74B5") %>%
+        autofit() %>%
+        align(align = "left", part = "all")
+      
+      doc <- doc %>% body_add_flextable(ft_test_info) %>% body_add_par("") %>%
+        body_add_par("KESIMPULAN", style = "heading 2") %>%
+        body_add_par("Hasil uji statistik inferensia memberikan dasar untuk pengambilan keputusan berdasarkan bukti empiris dari data sampel.") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📊 Laporan dibuat otomatis pada:", format(Sys.time(), "%d %B %Y, %H:%M:%S WIB"))) %>%
+        body_add_par("🔗 Dashboard Analisis Statistik Terpadu (DAST)")
+      
+      print(doc, target = file)
     },
-    contentType = "text/plain"
+    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
   
   # Download regression plots - ENHANCED to JPG format
@@ -3855,34 +4326,76 @@ server <- function(input, output, session) {
     contentType = "image/jpeg"
   )
   
-  # Download regression report
+  # Download regression report - ENHANCED Word document
   output$download_regression_report <- downloadHandler(
     filename = function() {
-      paste("DAST_Laporan_Regresi_", Sys.Date(), ".pdf", sep = "")
+      paste("DAST_Laporan_Regresi_", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      temp_file <- create_temp_file("txt")
-      
-      cat("LAPORAN REGRESI LINEAR BERGANDA\n", file = temp_file)
-      cat("Tanggal:", as.character(Sys.Date()), "\n\n", file = temp_file, append = TRUE)
+      doc <- read_docx() %>%
+        body_add_par("LAPORAN REGRESI LINEAR BERGANDA", style = "heading 1") %>%
+        body_add_par("Dashboard Analisis Statistik Terpadu (DAST)", style = "heading 2") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📅 Tanggal:", Sys.Date())) %>%
+        body_add_par(paste("🕐 Waktu:", format(Sys.time(), "%H:%M:%S WIB"))) %>%
+        body_add_par("")
       
       if(!is.null(input$reg_response) && !is.null(input$reg_predictors)) {
-        cat("Variabel Terikat:", input$reg_response, "\n", file = temp_file, append = TRUE)
-        cat("Variabel Bebas:", paste(input$reg_predictors, collapse = ", "), "\n\n", file = temp_file, append = TRUE)
+        # Model information
+        model_info <- data.frame(
+          "Aspek" = c("Variabel Terikat (Y)", "Variabel Bebas (X)", "Jumlah Prediktor"),
+          "Detail" = c(input$reg_response, 
+                       paste(input$reg_predictors, collapse = ", "),
+                       length(input$reg_predictors))
+        )
         
+        ft_model_info <- flextable(model_info) %>%
+          theme_booktabs() %>%
+          color(part = "header", color = "white") %>%
+          bg(part = "header", bg = "#2E74B5") %>%
+          autofit() %>%
+          align(align = "left", part = "all")
+        
+        doc <- doc %>% body_add_flextable(ft_model_info) %>% body_add_par("")
+        
+        # Model statistics if available
         if(!is.null(reg_model())) {
           model_summary <- summary(reg_model())
-          cat("R-squared:", round(model_summary$r.squared, 4), "\n", file = temp_file, append = TRUE)
-          cat("Adjusted R-squared:", round(model_summary$adj.r.squared, 4), "\n", file = temp_file, append = TRUE)
+          
+          model_stats <- data.frame(
+            "Statistik" = c("R-squared", "Adjusted R-squared", "F-statistic", "p-value"),
+            "Nilai" = c(round(model_summary$r.squared, 4),
+                        round(model_summary$adj.r.squared, 4),
+                        round(model_summary$fstatistic[1], 4),
+                        format(pf(model_summary$fstatistic[1], 
+                                  model_summary$fstatistic[2], 
+                                  model_summary$fstatistic[3], 
+                                  lower.tail = FALSE), digits = 4))
+          )
+          
+          ft_model_stats <- flextable(model_stats) %>%
+            theme_booktabs() %>%
+            color(part = "header", color = "white") %>%
+            bg(part = "header", bg = "#70AD47") %>%
+            autofit() %>%
+            align(align = "center", part = "all")
+          
+          doc <- doc %>% 
+            body_add_par("STATISTIK MODEL", style = "heading 2") %>%
+            body_add_flextable(ft_model_stats) %>% body_add_par("")
         }
       }
       
-      cat("\nAnalisis regresi telah dilakukan.\n", file = temp_file, append = TRUE)
-      cat("Silakan lihat output di aplikasi untuk detail lengkap.\n", file = temp_file, append = TRUE)
+      doc <- doc %>%
+        body_add_par("KESIMPULAN", style = "heading 2") %>%
+        body_add_par("Analisis regresi linear berganda memberikan pemahaman tentang hubungan antar variabel dan kemampuan prediksi model.") %>%
+        body_add_par("") %>%
+        body_add_par(paste("📊 Laporan dibuat otomatis pada:", format(Sys.time(), "%d %B %Y, %H:%M:%S WIB"))) %>%
+        body_add_par("🔗 Dashboard Analisis Statistik Terpadu (DAST)")
       
-      file.copy(temp_file, file)
+      print(doc, target = file)
     },
-    contentType = "text/plain"
+    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
 }
 
